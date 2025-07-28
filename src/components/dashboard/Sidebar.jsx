@@ -51,17 +51,18 @@ export function Sidebar() {
 			<aside
 				className={`${
 					open ? "block" : "hidden"
-				} md:block w-full md:w-64 bg-white border-r shadow-sm fixed md:static z-50 top-0 left-0 h-full md:h-auto`}
+				} md:block w-full md:w-64 bg-[#fff7f3] border-r border-[#f1e3db] shadow-sm fixed md:static z-50 top-0 left-0 h-full md:h-auto`}
 			>
-				<div className="p-4 border-b flex justify-between items-center">
-					<h1 className="text-lg font-bold">Invoice App</h1>
-					{/* Close icon (for mobile) */}
+				{/* Header */}
+				<div className="p-4 border-b border-[#f1e3db] flex justify-between items-center bg-[#fff2ea]">
+					<h1 className="text-lg font-bold text-[#6D2315] tracking-wide">Invoice App</h1>
 					<button onClick={() => setOpen(false)} className="md:hidden">
-						<X className="w-5 h-5" />
+						<X className="w-5 h-5 text-[#6D2315]" />
 					</button>
 				</div>
 
-				<nav className="flex flex-col p-4 space-y-2">
+				{/* Nav Items */}
+				<nav className="flex flex-col p-4 space-y-2 text-sm text-gray-700">
 					{navItems.map((item) => {
 						const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
@@ -70,12 +71,11 @@ export function Sidebar() {
 								<div key={item.href} className="space-y-1">
 									<div
 										className={`px-3 py-2 rounded-md font-semibold ${
-											isActive ? "bg-sky-200 text-gray-900" : "text-gray-700"
+											isActive ? "bg-[#f9e0cd] text-[#6D2315]" : "text-gray-700 hover:bg-[#fceee4]"
 										}`}
 									>
 										{item.name}
 									</div>
-									{/* Submenu */}
 									<div className="ml-4 space-y-1">
 										{item.children.map((child) => (
 											<Link
@@ -83,8 +83,8 @@ export function Sidebar() {
 												href={child.href}
 												className={`block px-3 py-2 rounded-md text-sm ${
 													pathname === child.href
-														? "bg-sky-200 font-semibold text-gray-900"
-														: "hover:bg-sky-100 text-gray-700"
+														? "bg-[#f9e0cd] text-[#6D2315] font-semibold"
+														: "hover:bg-[#fceee4] text-gray-700"
 												}`}
 												onClick={() => setOpen(false)}
 											>
@@ -102,8 +102,8 @@ export function Sidebar() {
 								href={item.href}
 								className={`px-3 py-2 rounded-md ${
 									pathname === item.href
-										? "bg-sky-200 font-semibold text-gray-900"
-										: "hover:bg-sky-100 text-gray-700"
+										? "bg-[#f9e0cd] text-[#6D2315] font-semibold"
+										: "hover:bg-[#fceee4] text-gray-700"
 								}`}
 								onClick={() => setOpen(false)}
 							>

@@ -45,14 +45,6 @@ export default function SizeCombobox({ sizes, value, onChange }) {
 										onChange(s.id, s.price);
 										setOpen(false);
 									}}
-									// value={s.id}
-									// onSelect={(currentId) => {
-									// 	const selected = sizes.find((sz) => sz.id === currentId);
-									// 	if (selected) {
-									// 		onChange(selected.id, selected.price);
-									// 		setOpen(false);
-									// 	}
-									// }}
 								>
 									{s.size}
 									<Check

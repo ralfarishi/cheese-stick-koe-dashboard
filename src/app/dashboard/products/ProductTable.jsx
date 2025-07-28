@@ -57,26 +57,29 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 	);
 
 	return (
-		<Card className="p-4">
+		<Card className="p-4 bg-[#fffaf0] border border-[#f4e3d3] shadow-sm">
+			{/* Search Field */}
 			<Input
 				type="text"
-				placeholder="Search product ..."
+				placeholder="Search product..."
 				value={searchQuery}
 				onChange={(e) => {
 					setSearchQuery(e.target.value);
 					setCurrentPage(1);
 				}}
-				className="w-50 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+				className="mb-4 w-full sm:w-64 px-3 py-2 text-sm border border-[#6D2315] rounded-md focus:outline-none focus:ring-2 focus:ring-[#6D2315]"
 			/>
-			<div className="overflow-auto rounded-lg border">
+
+			{/* Table */}
+			<div className="overflow-x-auto rounded-lg border border-[#fceee4]">
 				<table className="w-full text-sm">
-					<thead className="bg-gray-50 dark:bg-gray-800">
+					<thead className="bg-[#fdf2e9] text-[#6D2315]">
 						<tr>
 							<th
-								className="px-4 py-2 text-left font-medium cursor-pointer"
+								className="px-4 py-2 text-left font-semibold cursor-pointer"
 								onClick={() => {
 									setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-									setCurrentPage(1); // reset ke page 1 tiap kali sorting
+									setCurrentPage(1);
 								}}
 							>
 								<div className="flex items-center gap-1">
@@ -88,41 +91,48 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 									)}
 								</div>
 							</th>
-
-							<th className="px-4 py-2 text-left font-medium">Description</th>
-							<th className="px-4 py-2 text-left font-medium">Created At</th>
-							<th className="px-4 py-2 text-left font-medium">Action</th>
+							<th className="px-4 py-2 text-left font-semibold">Description</th>
+							<th className="px-4 py-2 text-left font-semibold">Created At</th>
+							<th className="px-4 py-2 text-left font-semibold">Action</th>
 						</tr>
 					</thead>
+
 					<tbody>
 						{paginatedData.map((product) => (
-							<tr key={product.id} className="border-t">
-								<td className="px-4 py-2">{product.name}</td>
-								<td className="px-4 py-2">{product.description || "-"}</td>
-								<td className="px-4 py-2">{new Date(product.createdAt).toLocaleString()}</td>
-								<td className="px-4 py-2 flex gap-2">
-									<Button
-										onClick={() => {
-											setSelectedProduct(product);
-											setEditModalOpen(true);
-										}}
-										variant="ghost"
-										size="icon"
-										className="text-blue-500 hover:text-blue-600"
-									>
-										<Pencil className="h-4 w-4" />
-									</Button>
-									<Button
-										onClick={() => {
-											setSelectedProduct(product);
-											setDeleteModalOpen(true);
-										}}
-										variant="ghost"
-										size="icon"
-										className="text-red-500 hover:text-red-600"
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
+							<tr
+								key={product.id}
+								className="border-t border-[#fceee4] hover:bg-[#fff3ec] transition-colors"
+							>
+								<td className="px-4 py-2 text-gray-800">{product.name}</td>
+								<td className="px-4 py-2 text-gray-600">{product.description || "-"}</td>
+								<td className="px-4 py-2 text-gray-500">
+									{new Date(product.createdAt).toLocaleString()}
+								</td>
+								<td className="px-4 py-2">
+									<div className="flex gap-2">
+										<Button
+											onClick={() => {
+												setSelectedProduct(product);
+												setEditModalOpen(true);
+											}}
+											variant="ghost"
+											size="icon"
+											className="text-blue-500 hover:text-blue-600"
+										>
+											<Pencil className="h-4 w-4" />
+										</Button>
+										<Button
+											onClick={() => {
+												setSelectedProduct(product);
+												setDeleteModalOpen(true);
+											}}
+											variant="ghost"
+											size="icon"
+											className="text-red-500 hover:text-red-600"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+									</div>
 								</td>
 							</tr>
 						))}
@@ -131,7 +141,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 			</div>
 
 			{/* Pagination */}
-			<div className="mt-4 flex justify-end gap-2">
+			<div className="mt-4 flex justify-end flex-wrap gap-2">
 				{Array.from({ length: totalPages }).map((_, idx) => {
 					const page = idx + 1;
 					return (
@@ -140,6 +150,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 							onClick={() => setCurrentPage(page)}
 							variant={page === currentPage ? "default" : "outline"}
 							size="sm"
+							className={page === currentPage ? "bg-[#6D2315] text-white" : ""}
 						>
 							{page}
 						</Button>
@@ -147,6 +158,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 				})}
 			</div>
 
+			{/* Modals */}
 			<ProductDeleteModal
 				open={deleteModalOpen}
 				onOpenChange={setDeleteModalOpen}

@@ -23,7 +23,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 	const router = useRouter();
 
 	const [invoice, setInvoice] = useState([]);
-	const [sortOrder, setSortOrder] = useState("asc");
+	const [sortOrder, setSortOrder] = useState("desc");
 
 	const [error, setError] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
@@ -74,7 +74,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 	};
 
 	return (
-		<Card className="p-4">
+		<Card className="p-4 bg-[#fffaf0] border border-[#f4e3d3] shadow-sm">
 			<Input
 				type="text"
 				placeholder="Search by name/inv.number"
@@ -83,14 +83,14 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 					setSearchQuery(e.target.value);
 					setCurrentPage(1);
 				}}
-				className="w-50 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+				className="mb-4 w-full sm:w-64 px-3 py-2 text-sm border border-[#6D2315] rounded-md focus:outline-none focus:ring-2 focus:ring-[#6D2315]"
 			/>
-			<div className="overflow-auto rounded-lg border">
+			<div className="overflow-x-auto rounded-lg border border-[#fceee4]">
 				<table className="w-full text-sm">
-					<thead className="bg-gray-50 dark:bg-gray-800">
+					<thead className="bg-[#fdf2e9] text-[#6D2315]">
 						<tr>
 							<th
-								className="px-4 py-2 text-left font-medium cursor-pointer"
+								className="px-4 py-2 text-left font-semibold cursor-pointer"
 								onClick={() => {
 									setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 									setCurrentPage(1); // reset ke page 1 tiap kali sorting
@@ -98,63 +98,70 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 							>
 								<div className="flex items-center gap-1">
 									Invoice Number
-									{sortOrder === "asc" ? (
-										<ArrowUp className="w-4 h-4" />
-									) : (
+									{sortOrder === "desc" ? (
 										<ArrowDown className="w-4 h-4" />
+									) : (
+										<ArrowUp className="w-4 h-4" />
 									)}
 								</div>
 							</th>
 
-							<th className="px-4 py-2 text-left font-medium">Customer</th>
-							<th className="px-4 py-2 text-left font-medium">Total Price</th>
-							<th className="px-4 py-2 text-left font-medium">Date</th>
-							<th className="px-4 py-2 text-left font-medium">Status</th>
-							<th className="px-4 py-2 text-left font-medium">Action</th>
+							<th className="px-4 py-2 text-left font-semibold">Customer</th>
+							<th className="px-4 py-2 text-left font-semibold">Total Price</th>
+							<th className="px-4 py-2 text-left font-semibold">Date</th>
+							<th className="px-4 py-2 text-left font-semibold">Status</th>
+							<th className="px-4 py-2 text-left font-semibold">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						{paginatedData.map((data) => (
-							<tr key={data.id} className="border-t">
-								<td className="px-4 py-2">{data.invoiceNumber}</td>
-								<td className="px-4 py-2">{toTitleCase(data.buyerName)}</td>
-								<td className="px-4 py-2">Rp. {(data.totalPrice || 0).toLocaleString("id-ID")}</td>
-								<td className="px-4 py-2">
+							<tr
+								key={data.id}
+								className="border-t border-[#fceee4] hover:bg-[#fff3ec] transition-colors"
+							>
+								<td className="px-4 py-2 text-gray-800">{data.invoiceNumber}</td>
+								<td className="px-4 py-2 text-gray-800">{toTitleCase(data.buyerName)}</td>
+								<td className="px-4 py-2 text-gray-800">
+									Rp. {(data.totalPrice || 0).toLocaleString("id-ID")}
+								</td>
+								<td className="px-4 py-2 text-gray-800">
 									{formatInvoiceDateTime(data.invoiceDate, data.createdAt)}
 								</td>
-								<td className="px-4 py-2">
+								<td className="px-4 py-2 text-gray-800">
 									<span className={getStatusVariant(data.status)}>{toTitleCase(data.status)}</span>
 								</td>
-								<td className="px-4 py-2 flex gap-2">
-									<Button
-										onClick={() => {
-											router.push(`/dashboard/invoices/${data.invoiceNumber}`);
-										}}
-										variant="ghost"
-										size="icon"
-										className="text-blue-500 hover:text-blue-600"
-									>
-										<Pencil className="h-4 w-4" />
-									</Button>
-									<Button
-										onClick={() => {
-											setSelectedInvoice(data);
-											setDeleteModalOpen(true);
-										}}
-										variant="ghost"
-										size="icon"
-										className="text-red-500 hover:text-red-600"
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
-									<Button
-										onClick={() => handleDownload(data.id)}
-										variant="ghost"
-										size="icon"
-										className="text-green-500 hover:text-green-600"
-									>
-										<Download className="h-4 w-4" />
-									</Button>
+								<td className="px-4 py-2">
+									<div className="flex gap-2">
+										<Button
+											onClick={() => {
+												router.push(`/dashboard/invoices/${data.invoiceNumber}`);
+											}}
+											variant="ghost"
+											size="icon"
+											className="text-blue-500 hover:text-blue-600"
+										>
+											<Pencil className="h-4 w-4" />
+										</Button>
+										<Button
+											onClick={() => {
+												setSelectedInvoice(data);
+												setDeleteModalOpen(true);
+											}}
+											variant="ghost"
+											size="icon"
+											className="text-red-500 hover:text-red-600"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+										<Button
+											onClick={() => handleDownload(data.id)}
+											variant="ghost"
+											size="icon"
+											className="text-green-500 hover:text-green-600"
+										>
+											<Download className="h-4 w-4" />
+										</Button>
+									</div>
 								</td>
 							</tr>
 						))}
@@ -163,7 +170,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 			</div>
 
 			{/* Pagination */}
-			<div className="mt-4 flex justify-end gap-2">
+			<div className="mt-4 flex justify-end flex-wrap gap-2">
 				{Array.from({ length: totalPages }).map((_, idx) => {
 					const page = idx + 1;
 					return (
@@ -172,6 +179,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 							onClick={() => setCurrentPage(page)}
 							variant={page === currentPage ? "default" : "outline"}
 							size="sm"
+							className={page === currentPage ? "bg-[#6D2315] text-white" : ""}
 						>
 							{page}
 						</Button>

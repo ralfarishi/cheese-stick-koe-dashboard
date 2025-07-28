@@ -11,7 +11,12 @@ export default function ProductModalButton({ onProductAdded }) {
 
 	return (
 		<>
-			<Button onClick={() => setOpen(true)}>Add Product</Button>
+			<Button
+				onClick={() => setOpen(true)}
+				className="bg-[#6D2315] hover:bg-[#591c10] text-white px-4 py-2 rounded-md"
+			>
+				Add Product
+			</Button>
 			<ProductModal
 				open={open}
 				setOpen={setOpen}

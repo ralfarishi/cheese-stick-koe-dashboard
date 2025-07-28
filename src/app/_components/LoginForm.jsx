@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
+import { LockIcon } from "lucide-react";
 
 export default function LoginForm() {
 	const [email, setEmail] = useState("");
@@ -33,29 +34,51 @@ export default function LoginForm() {
 	};
 
 	return (
-		<div className="min-h-screen flex items-center justify-center px-4 bg-gray-100">
-			<Card className="w-full max-w-sm shadow-lg">
-				<CardHeader>
-					<CardTitle className="text-center text-xl">Login</CardTitle>
+		<div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#fef6f3] to-[#f1f5f9]">
+			<Card className="w-full max-w-md shadow-xl border border-gray-200">
+				<CardHeader className="text-center space-y-2">
+					<div className="flex justify-center">
+						<div className="w-14 h-14 rounded-full bg-[#6d2315] text-white flex items-center justify-center text-2xl font-bold">
+							<LockIcon />
+						</div>
+					</div>
+					<CardTitle className="text-2xl font-bold text-[#6d2315]">Welcome Back</CardTitle>
+					<p className="text-sm text-gray-500">Please login to your account</p>
 				</CardHeader>
+
 				<CardContent>
-					<form onSubmit={handleLogin} className="space-y-4">
-						<Input
-							type="email"
-							placeholder="Email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							required
-						/>
-						<Input
-							type="password"
-							placeholder="Password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							required
-						/>
+					<form onSubmit={handleLogin} className="space-y-5">
+						<div className="space-y-1">
+							<label htmlFor="email" className="text-sm font-medium text-gray-700">
+								Email
+							</label>
+							<Input
+								id="email"
+								type="email"
+								placeholder="you@example.com"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								required
+							/>
+						</div>
+
+						<div className="space-y-1">
+							<label htmlFor="password" className="text-sm font-medium text-gray-700">
+								Password
+							</label>
+							<Input
+								id="password"
+								type="password"
+								placeholder="••••••••"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								required
+							/>
+						</div>
+
 						{error && <p className="text-sm text-red-500 text-center">{error}</p>}
-						<Button type="submit" className="w-full">
+
+						<Button type="submit" className="w-full bg-[#6d2315] hover:bg-[#591c10]">
 							Login
 						</Button>
 					</form>

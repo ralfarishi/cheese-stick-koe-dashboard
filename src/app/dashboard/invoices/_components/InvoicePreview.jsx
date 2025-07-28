@@ -225,9 +225,9 @@ const InvoicePreview = forwardRef(
 								<span className="font-semibold text-sm">*Disclaimer</span>
 								<br />
 								<span className="text-black text-sm">
-									Pihak <span className="font-semibold">Cheese Stick Koe</span> tidak bertanggung
-									jawab terhadap kerusakan jenis apapun yg terjadi selama pengiriman oleh kurir
-									ekspedisi. Namun, kami akan bantu bantu klaim ke pihak kurir jika ada kerusakan.
+									Segala kerusakan yang terjadi selama pengiriman menjadi tanggung jawab pihak
+									ekspedisi. Namun, kami siap membantu proses klaim ke pihak ekspedisi apabila
+									terjadi kendala selama pengiriman.
 								</span>
 							</div>
 						</div>

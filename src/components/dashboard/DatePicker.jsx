@@ -36,9 +36,6 @@ export default function DatePicker({ invoiceDate, setInvoiceDate }) {
 
 	return (
 		<div className="flex flex-col gap-3">
-			<Label htmlFor="date" className="px-1">
-				Invoice Date
-			</Label>
 			<div className="relative flex gap-2">
 				<Input
 					id="date"

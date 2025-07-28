@@ -49,13 +49,13 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
 	);
 
 	return (
-		<Card className="p-4">
-			<div className="overflow-auto rounded-lg border">
+		<Card className="p-4 bg-[#fffaf0] border border-[#f4e3d3] shadow-sm">
+			<div className="overflow-x-auto rounded-lg border border-[#fceee4]">
 				<table className="w-full text-sm">
-					<thead className="bg-gray-50 dark:bg-gray-800">
+					<thead className="bg-[#fdf2e9] text-[#6D2315]">
 						<tr>
 							<th
-								className="px-4 py-2 text-left font-medium cursor-pointer"
+								className="px-4 py-2 text-left font-semibold cursor-pointer"
 								onClick={() => {
 									setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 									setCurrentPage(1); // reset ke page 1 tiap kali sorting
@@ -71,40 +71,49 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
 								</div>
 							</th>
 
-							<th className="px-4 py-2 text-left font-medium">Price</th>
-							<th className="px-4 py-2 text-left font-medium">Created At</th>
-							<th className="px-4 py-2 text-left font-medium">Action</th>
+							<th className="px-4 py-2 text-left font-semibold">Price</th>
+							<th className="px-4 py-2 text-left font-semibold">Created At</th>
+							<th className="px-4 py-2 text-left font-semibold">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						{paginatedData.map((data) => (
-							<tr key={data.id} className="border-t">
-								<td className="px-4 py-2">{data.size}</td>
-								<td className="px-4 py-2">Rp. {(data.price || 0).toLocaleString("id-ID")}</td>
-								<td className="px-4 py-2">{new Date(data.createdAt).toLocaleString()}</td>
-								<td className="px-4 py-2 flex gap-2">
-									<Button
-										onClick={() => {
-											setSelectedSize(data);
-											setEditModalOpen(true);
-										}}
-										variant="ghost"
-										size="icon"
-										className="text-blue-500 hover:text-blue-600"
-									>
-										<Pencil className="h-4 w-4" />
-									</Button>
-									<Button
-										onClick={() => {
-											setSelectedSize(data);
-											setDeleteModalOpen(true);
-										}}
-										variant="ghost"
-										size="icon"
-										className="text-red-500 hover:text-red-600"
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
+							<tr
+								key={data.id}
+								className="border-t border-[#fceee4] hover:bg-[#fff3ec] transition-colors"
+							>
+								<td className="px-4 py-2 text-gray-800">{data.size}</td>
+								<td className="px-4 py-2 text-gray-800">
+									Rp. {(data.price || 0).toLocaleString("id-ID")}
+								</td>
+								<td className="px-4 py-2 text-gray-800">
+									{new Date(data.createdAt).toLocaleString()}
+								</td>
+								<td className="px-4 py-2">
+									<div className="flex gap-2">
+										<Button
+											onClick={() => {
+												setSelectedSize(data);
+												setEditModalOpen(true);
+											}}
+											variant="ghost"
+											size="icon"
+											className="text-blue-500 hover:text-blue-600"
+										>
+											<Pencil className="h-4 w-4" />
+										</Button>
+										<Button
+											onClick={() => {
+												setSelectedSize(data);
+												setDeleteModalOpen(true);
+											}}
+											variant="ghost"
+											size="icon"
+											className="text-red-500 hover:text-red-600"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+									</div>
 								</td>
 							</tr>
 						))}
@@ -113,7 +122,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
 			</div>
 
 			{/* Pagination */}
-			<div className="mt-4 flex justify-end gap-2">
+			<div className="mt-4 flex justify-end flex-wrap gap-2">
 				{Array.from({ length: totalPages }).map((_, idx) => {
 					const page = idx + 1;
 					return (
@@ -122,6 +131,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
 							onClick={() => setCurrentPage(page)}
 							variant={page === currentPage ? "default" : "outline"}
 							size="sm"
+							className={page === currentPage ? "bg-[#6D2315] text-white" : ""}
 						>
 							{page}
 						</Button>

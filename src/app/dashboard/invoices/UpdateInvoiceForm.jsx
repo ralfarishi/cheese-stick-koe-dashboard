@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
@@ -20,7 +22,7 @@ import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 
 import { getPageTitle } from "@/lib/utils";
-import { Trash2 } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 
 import { toast } from "sonner";
 
@@ -163,18 +165,30 @@ export default function UpdateInvoiceForm({ invoice }) {
 	const totalPrice = subtotal + parseInt(shippingPrice || 0);
 
 	return (
-		<section className="w-full px-4 md:px-8 py-6">
-			<div className="bg-white rounded-xl shadow-lg p-6 space-y-6">
-				<Card>
-					<CardHeader>
-						<CardTitle className="font-bold text-3xl text-center">EDIT INVOICE</CardTitle>
+		<section className="w-full px-4 py-6 bg-[#fffaf0]">
+			<div className="bg-white rounded-xl shadow-md p-6 space-y-6 border border-[#f4e3d3]">
+				{/* Breadcrumbs (Mobile Only) */}
+				<div className="block md:hidden text-sm text-gray-500 mb-4">
+					<nav className="flex items-center space-x-1">
+						<Link className="text-gray-400" href="/dashboard/invoices">
+							List Invoice
+						</Link>
+						<ChevronRight className="w-4 h-4 text-gray-400" />
+						<span className="text-gray-700 font-medium">Edit Invoice</span>
+					</nav>
+				</div>
+
+				<Card className="border-0 shadow-none">
+					<CardHeader className="text-center mb-2">
+						<CardTitle className="font-bold text-3xl text-[#6D2315]">EDIT INVOICE</CardTitle>
 					</CardHeader>
+
 					<CardContent>
-						<form onSubmit={handleUpdate} className="space-y-6">
+						<form onSubmit={handleUpdate} className="space-y-8">
 							{/* Basic Info */}
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+							<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 								<div>
-									<Label className="py-2">Invoice Number</Label>
+									<Label className="py-2 block text-sm text-gray-700">Invoice Number</Label>
 									<Input
 										value={invoiceNumber}
 										onChange={(e) => setInvoiceNumber(e.target.value)}
@@ -182,7 +196,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 									/>
 								</div>
 								<div>
-									<Label className="py-2">Buyer Name</Label>
+									<Label className="py-2 block text-sm text-gray-700">Buyer Name</Label>
 									<Input
 										value={buyerName}
 										onChange={(e) => setBuyerName(e.target.value)}
@@ -190,24 +204,25 @@ export default function UpdateInvoiceForm({ invoice }) {
 									/>
 								</div>
 								<div>
+									<Label className="py-2 block text-sm text-gray-700">Invoice Date</Label>
 									<DatePicker invoiceDate={invoiceDate} setInvoiceDate={setInvoiceDate} />
 								</div>
 								<div className="">
-									<Label className="py-2">Status</Label>
+									<Label className="py-2 block text-sm text-gray-700">Status</Label>
 									<StatusCombobox value={status} onChange={setStatus} required />
 								</div>
 							</div>
 
 							{/* Items */}
 
-							<div className="space-y-4">
+							<div className="space-y-6">
 								{items.map((item, index) => (
 									<div
 										key={index}
-										className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border rounded-md"
+										className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-[#fceee4] rounded-md bg-[#fffefb]"
 									>
 										<div className="md:col-span-4">
-											<Label className="mb-1 block text-sm">Items</Label>
+											<Label className="mb-1 block text-sm text-gray-700">Items</Label>
 											<ProductCombobox
 												products={products}
 												value={item.productId}
@@ -215,7 +230,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 											/>
 										</div>
 										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm">Size</Label>
+											<Label className="mb-1 block text-sm text-gray-700">Size</Label>
 											<SizeCombobox
 												sizes={sizes}
 												value={item.sizePriceId}
@@ -226,7 +241,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 											/>
 										</div>
 										<div className="md:col-span-1">
-											<Label className="mb-1 block text-sm">Qty</Label>
+											<Label className="mb-1 block text-sm text-gray-700">Qty</Label>
 											<Input
 												type="number"
 												placeholder="Qty"
@@ -236,7 +251,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 											/>
 										</div>
 										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm">Price</Label>
+											<Label className="mb-1 block text-sm text-gray-700">Price</Label>
 											<Input
 												type="number"
 												placeholder="Price"
@@ -246,8 +261,12 @@ export default function UpdateInvoiceForm({ invoice }) {
 											/>
 										</div>
 										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm">Total</Label>
-											<Input value={item.total} disabled className="bg-gray-100" />
+											<Label className="mb-1 block text-sm text-gray-700">Total</Label>
+											<Input
+												value={item.total.toLocaleString("id-ID")}
+												disabled
+												className="bg-gray-100"
+											/>
 										</div>
 										<div className="md:col-span-1 flex justify-end mt-2 md:mt-6">
 											<Button
@@ -261,15 +280,19 @@ export default function UpdateInvoiceForm({ invoice }) {
 										</div>
 									</div>
 								))}
-								<Button type="button" onClick={addItem} className="mt-2">
-									+
+								<Button
+									type="button"
+									onClick={addItem}
+									className="mt-2 bg-[#6D2315] hover:bg-[#591c10] text-white"
+								>
+									+ Add Item
 								</Button>
 							</div>
 
 							{/* Shipping & Total */}
 							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 								<div>
-									<Label className="py-2">Shipping Price</Label>
+									<Label className="py-2 block text-sm text-gray-700">Shipping Price</Label>
 									<Input
 										type="number"
 										value={shippingPrice}
@@ -277,16 +300,24 @@ export default function UpdateInvoiceForm({ invoice }) {
 									/>
 								</div>
 								<div>
-									<Label className="py-2">Subtotal</Label>
-									<Input value={subtotal} disabled className="bg-gray-100" />
+									<Label className="py-2 block text-sm text-gray-700">Subtotal</Label>
+									<Input
+										value={subtotal.toLocaleString("id-ID")}
+										disabled
+										className="bg-gray-100"
+									/>
 								</div>
 								<div>
-									<Label className="py-2">Total Price</Label>
-									<Input value={totalPrice} disabled className="bg-gray-100" />
+									<Label className="py-2 block text-sm text-gray-700">Total Price</Label>
+									<Input
+										value={totalPrice.toLocaleString("id-ID")}
+										disabled
+										className="bg-gray-100"
+									/>
 								</div>
 							</div>
 
-							<Button type="submit" className="w-full bg-sky-500 hover:bg-blue-500">
+							<Button type="submit" className="w-full bg-[#6D2315] hover:bg-[#591c10] text-white">
 								Save
 							</Button>
 						</form>

@@ -52,26 +52,5 @@ export default function ProductModal({ open, setOpen, onSuccess }) {
 			showCancel={false}
 			buttonStyling="bg-primary"
 		/>
-		// <Dialog open={open} onOpenChange={setOpen}>
-		// 	<DialogContent>
-		// 		<DialogHeader>
-		// 			<DialogTitle>Add Product</DialogTitle>
-		// 		</DialogHeader>
-
-		// 		<form onSubmit={handleSubmit} className="space-y-4 mt-4">
-		// 			<div className="space-y-1">
-		// 				<Label>Product Name</Label>
-		// 				<Input value={name} onChange={(e) => setName(e.target.value)} required />
-		// 			</div>
-		// 			<div className="space-y-1">
-		// 				<Label>Description (optional)</Label>
-		// 				<Input value={description} onChange={(e) => setDescription(e.target.value)} />
-		// 			</div>
-		// 			<Button type="submit" className="w-full mt-2">
-		// 				Add
-		// 			</Button>
-		// 		</form>
-		// 	</DialogContent>
-		// </Dialog>
 	);
 }
