@@ -173,8 +173,8 @@ const InvoicePreview = forwardRef(
 												<td className="p-2">{item.productName}</td>
 												<td className="p-2 text-center">{item.sizeName}</td>
 												<td className="p-2 text-center">{item.quantity}</td>
-												<td className="p-1">{`Rp ${item.total.toLocaleString("id-ID")}`}</td>
 												<td className="p-2">{`Rp ${item.price.toLocaleString("id-ID")}`}</td>
+												<td className="p-1">{`Rp ${item.total.toLocaleString("id-ID")}`}</td>
 											</tr>
 										))}
 
