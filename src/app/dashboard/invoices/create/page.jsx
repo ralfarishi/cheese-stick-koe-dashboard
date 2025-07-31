@@ -41,6 +41,9 @@ export default function CreateInvoicePage() {
 		{ productId: "", sizePriceId: "", quantity: 1, price: 0, total: 0 },
 	]);
 
+	// const [discountMode, setDiscountMode] = useState("amount");
+	// const [discountInput, setDiscountInput] = useState("0");
+
 	useEffect(() => {
 		const fetchLastInvoice = async () => {
 			const supabase = supabaseBrowser();
@@ -135,6 +138,18 @@ export default function CreateInvoicePage() {
 	};
 
 	const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+
+	// const discountAmount =
+	// 	discountMode === "percent"
+	// 		? Math.round(((parseFloat(discountInput) || 0) / 100) * subtotal)
+	// 		: parseInt(discountInput) || 0;
+
+	// const discountPercent =
+	// 	discountMode === "amount"
+	// 		? ((parseInt(discountInput) || 0) / subtotal) * 100
+	// 		: parseFloat(discountInput) || 0;
+
+	// const totalPrice = subtotal + (parseInt(shippingPrice) || 0) - discountAmount;
 	const totalPrice = subtotal + (parseInt(shippingPrice) || 0);
 
 	const handleSubmit = async (e) => {
@@ -293,17 +308,48 @@ export default function CreateInvoicePage() {
 								</Button>
 							</div>
 
-							{/* Shipping & Totals */}
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<div>
-									<Label className="py-2 block text-sm text-gray-700">Shipping Price</Label>
-									<Input
-										type="number"
-										value={shippingPrice}
-										onChange={(e) => setShippingPrice(e.target.value)}
-									/>
+							<div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+								{/* Discount */}
+								{/* <div className="md:col-span-4">
+									<div className="bg-[#fffaf0] border border-[#f4e3d3] rounded-md px-4 py-3 h-full">
+										<Label className="block text-sm text-gray-700 mb-2">Discount (Optional)</Label>
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+											<div>
+												<Label className="text-xs text-gray-500 mb-1 block">Percent (%)</Label>
+												<Input
+													type="number"
+													min={0}
+													max={100}
+													value={
+														discountMode === "percent" ? discountInput : discountPercent.toFixed(2)
+													}
+													onChange={(e) => {
+														setDiscountMode("percent");
+														setDiscountInput(e.target.value);
+													}}
+												/>
+											</div>
+
+											<div>
+												<Label className="text-xs text-gray-500 mb-1 block">Amount (Rp)</Label>
+												<Input
+													type="number"
+													min={0}
+													value={discountMode === "amount" ? discountInput : discountAmount}
+													onChange={(e) => {
+														setDiscountMode("amount");
+														setDiscountInput(e.target.value);
+													}}
+												/>
+											</div>
+										</div>
+									</div>
 								</div>
-								<div>
+
+								<div className="md:col-span-8 hidden md:block"></div> */}
+
+								{/* Subtotal */}
+								<div className="md:col-span-4">
 									<Label className="py-2 block text-sm text-gray-700">Subtotal</Label>
 									<Input
 										value={subtotal.toLocaleString("id-ID")}
@@ -311,7 +357,19 @@ export default function CreateInvoicePage() {
 										className="bg-gray-100"
 									/>
 								</div>
-								<div>
+
+								{/* Shipping */}
+								<div className="md:col-span-4">
+									<Label className="py-2 block text-sm text-gray-700">Shipping Price</Label>
+									<Input
+										type="number"
+										value={shippingPrice}
+										onChange={(e) => setShippingPrice(e.target.value)}
+									/>
+								</div>
+
+								{/* Total */}
+								<div className="md:col-span-4">
 									<Label className="py-2 block text-sm text-gray-700">Total Price</Label>
 									<Input
 										value={totalPrice.toLocaleString("id-ID")}
