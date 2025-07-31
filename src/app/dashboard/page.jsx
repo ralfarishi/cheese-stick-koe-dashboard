@@ -25,46 +25,38 @@ export default async function Dashboard() {
 
 	// const user = session.user;
 
-	// get total invoice
-	const { count: totalInvoices } = await supabase
-		.from("Invoice")
-		.select("*", { count: "exact", head: true });
-
-	// get total products
-	const { count: totalProducts } = await supabase
-		.from("Product")
-		.select("*", { count: "exact", head: true });
-
-	// get latest invoice data
+	// get all invoices
 	const { data: invoices } = await supabase
 		.from("Invoice")
-		.select("id, invoiceNumber, buyerName, totalPrice, status, createdAt")
-		.order("createdAt", { ascending: false })
-		.limit(5);
+		.select("*")
+		.order("invoiceDate", { ascending: false });
+
+	// get total invoice
+	const totalInvoices = invoices.length;
+
+	// get latest invoice data
+	const latestInvoices = invoices.slice(0, 5);
 
 	// count paid invoices
-	const { count: invoicesSuccess } = await supabase
-		.from("Invoice")
-		.select("id", { count: "exact" })
-		.eq("status", "success");
+	const invoicesSuccess = invoices.filter((inv) => inv.status === "success").length;
 
 	// count unpaid invoices
-	const { count: invoicesUnpaid } = await supabase
-		.from("Invoice")
-		.select("id", { count: "exact" })
-		.eq("status", "pending");
+	const invoicesUnpaid = invoices.filter((inv) => inv.status === "pending").length;
 
 	// count total customers (unique)
 	const { data } = await supabase.from("Invoice").select("buyerName");
-
 	const uniqueCustomers = new Set(data.map((d) => d.buyerName.trim().toLowerCase()));
-
 	const totalCustomers = uniqueCustomers.size;
 
 	const totalAmount =
 		invoices
 			?.filter((inv) => inv.status === "success")
 			.reduce((acc, curr) => acc + curr.totalPrice, 0) || 0;
+
+	// get total products
+	const { count: totalProducts } = await supabase
+		.from("Product")
+		.select("*", { count: "exact", head: true });
 
 	return (
 		<div className="grid gap-6">
@@ -173,8 +165,8 @@ export default async function Dashboard() {
 				</CardHeader>
 
 				<CardContent className="space-y-3">
-					{invoices && invoices.length > 0 ? (
-						invoices.map((inv) => (
+					{latestInvoices && latestInvoices.length > 0 ? (
+						latestInvoices.map((inv) => (
 							<div
 								key={inv.id}
 								className="flex items-center justify-between bg-[#fefaf7] hover:bg-[#fff3ec] transition-colors duration-150 border border-[#fceee4] rounded-md p-3"
