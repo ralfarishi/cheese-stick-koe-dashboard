@@ -53,3 +53,32 @@ export function formatDateFilename(date) {
 export function getPageTitle(subTitle) {
 	return `Cheese Stick Koe - ${subTitle}`;
 }
+
+export function calculateDiscountPercent({
+	quantity,
+	price,
+	discountMode,
+	discountInput,
+	discountAmount,
+}) {
+	const rawTotal = (quantity || 0) * (price || 0);
+
+	if (!rawTotal) return "0";
+
+	const amount =
+		discountMode === "percent"
+			? (parseFloat(discountInput) / 100) * rawTotal
+			: parseInt(discountInput) || discountAmount || 0;
+
+	const percent = (amount / rawTotal) * 100;
+
+	return isNaN(percent) ? "0" : percent.toFixed(2);
+}
+
+export function calculateDiscountAmount({ quantity, price, discountInput, discountMode }) {
+	const rawTotal = (quantity || 0) * (price || 0);
+	if (discountMode === "percent") {
+		return Math.round(((parseFloat(discountInput) || 0) / 100) * rawTotal);
+	}
+	return parseInt(discountInput) || 0;
+}

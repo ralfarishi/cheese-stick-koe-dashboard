@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 import { submitInvoice } from "@/lib/actions/invoice/submitInvoice";
+import { calculateDiscountAmount, calculateDiscountPercent } from "@/lib/utils";
 
 export default function CreateInvoicePage() {
 	const supabase = supabaseBrowser();
@@ -38,11 +39,21 @@ export default function CreateInvoicePage() {
 
 	const [shippingPrice, setShippingPrice] = useState(0);
 	const [items, setItems] = useState([
-		{ productId: "", sizePriceId: "", quantity: 1, price: 0, total: 0 },
+		{
+			productId: "",
+			sizePriceId: "",
+			quantity: 1,
+			price: 0,
+			discountMode: "amount" | "percent",
+			discountInput: "",
+			discountAmount: 0,
+			total: 0,
+		},
 	]);
 
-	// const [discountMode, setDiscountMode] = useState("amount");
-	// const [discountInput, setDiscountInput] = useState("0");
+	// general discount
+	const [discountMode, setDiscountMode] = useState("amount");
+	const [discountInput, setDiscountInput] = useState(0);
 
 	useEffect(() => {
 		const fetchLastInvoice = async () => {
@@ -75,7 +86,19 @@ export default function CreateInvoicePage() {
 	}, []);
 
 	const addItem = () => {
-		setItems([...items, { product: "", size: "", quantity: 1, price: 0, total: 0 }]);
+		setItems([
+			...items,
+			{
+				productId: "",
+				sizePriceId: "",
+				quantity: 1,
+				price: 0,
+				discountMode: "amount" | "percent",
+				discountInput: "",
+				discountAmount: 0,
+				total: 0,
+			},
+		]);
 	};
 
 	const removeItem = (index) => {
@@ -93,64 +116,60 @@ export default function CreateInvoicePage() {
 	}, []);
 
 	// Kalkulasi total per item dan subtotal
-	const handleItemChange = (index, field, value) => {
+	const handleItemChange = (index, field, value, mode = null) => {
 		const updatedItems = [...items];
+		const item = updatedItems[index];
 
 		if (field === "sizePriceId") {
-			// Cari harga berdasarkan size ID
 			const selectedSize = sizes.find((s) => s.id === value);
-
-			// Update size dan harga
-			updatedItems[index].sizePriceId = value;
-			updatedItems[index].price = selectedSize?.price || 0;
+			item.sizePriceId = value;
+			item.price = selectedSize?.price || 0;
 		} else if (field === "quantity") {
-			if (value === "") {
-				updatedItems[index].quantity = "";
-			} else {
-				const parsed = parseInt(value, 10);
-
-				if (isNaN(parsed)) {
-					toast.error("Field must be number");
-					updatedItems[index].quantity = "";
-				} else if (parsed < 1) {
-					toast.error("The value must be 1 or more");
-					updatedItems[index].quantity = 1;
-				} else {
-					updatedItems[index].quantity = parsed;
-				}
-			}
+			const parsed = parseInt(value, 10);
+			item.quantity = isNaN(parsed) || parsed < 1 ? 1 : parsed;
 		} else if (field === "price") {
-			if (value === "") {
-				updatedItems[index].price = value;
-			} else {
-				const parsed = parseInt(value, 10);
-				updatedItems[index].price = isNaN(parsed) ? 0 : parsed;
-			}
+			const parsed = parseInt(value, 10);
+			item.price = isNaN(parsed) ? 0 : parsed;
+		} else if (field === "discountMode") {
+			item.discountMode = value;
+		} else if (field === "discountInput") {
+			item.discountInput = value;
+			item.discountMode = mode;
 		} else {
-			updatedItems[index][field] = value;
+			item[field] = value;
 		}
 
-		// Hitung ulang total
-		updatedItems[index].total =
-			(updatedItems[index].quantity || 0) * (updatedItems[index].price || 0);
+		const qty = item.quantity || 0;
+		const price = item.price || 0;
+
+		const rawTotal = qty * price;
+
+		const discountAmount = calculateDiscountAmount({
+			quantity: item.quantity,
+			price: item.price,
+			discountInput: item.discountInput,
+			discountMode: item.discountMode,
+		});
+
+		item.discountAmount = discountAmount;
+		item.total = rawTotal - discountAmount;
 
 		setItems(updatedItems);
 	};
 
 	const subtotal = items.reduce((sum, item) => sum + item.total, 0);
 
-	// const discountAmount =
-	// 	discountMode === "percent"
-	// 		? Math.round(((parseFloat(discountInput) || 0) / 100) * subtotal)
-	// 		: parseInt(discountInput) || 0;
+	const discountAmount =
+		discountMode === "percent"
+			? Math.round(((parseFloat(discountInput) || 0) / 100) * subtotal)
+			: parseInt(discountInput) || 0;
 
-	// const discountPercent =
-	// 	discountMode === "amount"
-	// 		? ((parseInt(discountInput) || 0) / subtotal) * 100
-	// 		: parseFloat(discountInput) || 0;
+	const discountPercent =
+		discountMode === "amount"
+			? ((parseInt(discountInput) || 0) / subtotal) * 100
+			: parseFloat(discountInput) || 0;
 
-	// const totalPrice = subtotal + (parseInt(shippingPrice) || 0) - discountAmount;
-	const totalPrice = subtotal + (parseInt(shippingPrice) || 0);
+	const totalPrice = subtotal + (parseInt(shippingPrice) || 0) - discountAmount;
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -160,11 +179,19 @@ export default function CreateInvoicePage() {
 			return;
 		}
 
+		const isInvalid = items.some((item) => !item.productId || !item.sizePriceId);
+
+		if (isInvalid) {
+			toast.error("You must add product and size before submitting!");
+			return;
+		}
+
 		await submitInvoice({
 			invoiceNumber,
 			buyerName: buyerName.trim().toLowerCase(),
 			invoiceDate,
 			shippingPrice,
+			discountAmount,
 			totalPrice,
 			items,
 			user,
@@ -173,14 +200,17 @@ export default function CreateInvoicePage() {
 				setBuyerName("");
 				setInvoiceDate(new Date().toISOString());
 				setShippingPrice(0);
-				setItems([
-					{
-						productId: "",
-						sizePriceId: "",
-						quantity: 1,
-						total: 0,
-					},
-				]);
+				setDiscountInput(0),
+					setItems([
+						{
+							productId: "",
+							sizePriceId: "",
+							quantity: 1,
+							discountAmount: 0,
+							price: 0,
+							total: 0,
+						},
+					]);
 			},
 		});
 	};
@@ -213,7 +243,7 @@ export default function CreateInvoicePage() {
 									<Input
 										value={invoiceNumber}
 										onChange={(e) => setInvoiceNumber(e.target.value)}
-										placeholder={`Nomor invoice terakhir: ${lastInvoiceNumber}`}
+										placeholder={`Nomor invoice terakhir: ${lastInvoiceNumber || "0000"}`}
 										required
 									/>
 								</div>
@@ -233,84 +263,133 @@ export default function CreateInvoicePage() {
 							</div>
 
 							{/* Item List */}
-							<div className="space-y-6">
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 								{items.map((item, index) => (
-									<div
-										key={index}
-										className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-[#fceee4] rounded-md bg-[#fffefb]"
-									>
-										<div className="md:col-span-4">
-											<Label className="mb-1 block text-sm text-gray-700">Item</Label>
-											<ProductCombobox
-												products={products}
-												value={item.productId}
-												onChange={(val) => handleItemChange(index, "productId", val)}
-											/>
-										</div>
-										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm text-gray-700">Size</Label>
-											<SizeCombobox
-												sizes={sizes}
-												value={item.sizePriceId}
-												onChange={(val, price) => {
-													handleItemChange(index, "sizePriceId", val);
-													handleItemChange(index, "price", price);
-												}}
-											/>
-										</div>
-										<div className="md:col-span-1">
-											<Label className="mb-1 block text-sm text-gray-700">Qty</Label>
-											<Input
-												type="number"
-												placeholder="Qty"
-												value={item.quantity}
-												onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-												required
-											/>
-										</div>
-										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm text-gray-700">Price</Label>
-											<Input
-												type="number"
-												placeholder="Price"
-												value={item.price || 0}
-												className="bg-gray-100"
-												disabled
-											/>
-										</div>
-										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm text-gray-700">Total</Label>
-											<Input
-												value={item.total.toLocaleString("id-ID")}
-												disabled
-												className="bg-gray-100"
-											/>
-										</div>
-										<div className="md:col-span-1 flex justify-end mt-2 md:mt-6">
-											<Button
-												type="button"
-												variant="destructive"
-												onClick={() => removeItem(index)}
-												className="w-full md:w-10 h-10"
-											>
-												<Trash2 className="h-4 w-4" />
-											</Button>
+									<div key={index}>
+										<h3 className="text-sm font-medium text-[#6D2315] mb-1">Item {index + 1}</h3>
+
+										<div className="bg-[#fffefb] border border-[#fceee4] rounded-md p-4 space-y-3">
+											{/* Item Select */}
+											<div>
+												<Label className="text-sm text-gray-700 mb-1 block">Item</Label>
+												<ProductCombobox
+													products={products}
+													value={item.productId}
+													onChange={(val) => handleItemChange(index, "productId", val)}
+												/>
+											</div>
+
+											{/* Size & Qty */}
+											<div className="grid grid-cols-2 gap-2">
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Size</Label>
+													<SizeCombobox
+														sizes={sizes}
+														value={item.sizePriceId}
+														onChange={(val, price) => {
+															handleItemChange(index, "sizePriceId", val);
+															handleItemChange(index, "price", price);
+														}}
+													/>
+												</div>
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Qty</Label>
+													<Input
+														type="number"
+														value={item.quantity}
+														onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+														required
+													/>
+												</div>
+											</div>
+
+											{/* Price & Total */}
+											<div className="grid grid-cols-2 gap-2">
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Price</Label>
+													<Input
+														type="number"
+														value={item.price}
+														disabled
+														className="bg-gray-100"
+													/>
+												</div>
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Total</Label>
+													<Input
+														value={item.total.toLocaleString("id-ID")}
+														disabled
+														className="bg-gray-100"
+													/>
+												</div>
+											</div>
+
+											{/* Discount Each Item*/}
+											<div>
+												<Label className="text-sm text-gray-700 mb-1 block">
+													Discount (Optional)
+												</Label>
+												<div className="grid grid-cols-2 gap-2">
+													<Input
+														type="number"
+														placeholder="%"
+														min={0}
+														max={100}
+														value={
+															item.discountMode === "percent"
+																? item.discountInput
+																: calculateDiscountPercent(item)
+														}
+														onChange={(e) =>
+															handleItemChange(index, "discountInput", e.target.value, "percent")
+														}
+													/>
+													<Input
+														type="number"
+														placeholder="Rp"
+														min={0}
+														value={
+															item.discountMode === "amount"
+																? item.discountInput
+																: item.discountAmount
+														}
+														onChange={(e) =>
+															handleItemChange(index, "discountInput", e.target.value, "amount")
+														}
+													/>
+												</div>
+											</div>
+
+											{/* Delete button */}
+											<div className="flex justify-end">
+												<Button
+													type="button"
+													variant="destructive"
+													onClick={() => removeItem(index)}
+													className="h-9 px-3"
+												>
+													<Trash2 className="w-4 h-4" />
+												</Button>
+											</div>
 										</div>
 									</div>
 								))}
 
-								<Button
-									type="button"
-									onClick={addItem}
-									className="mt-2 bg-[#6D2315] hover:bg-[#591c10] text-white"
-								>
-									+ Add Item
-								</Button>
+								{/* Add Item Button */}
+								<div className="md:col-span-3">
+									<Button
+										type="button"
+										onClick={addItem}
+										className="mt-2 bg-[#6D2315] hover:bg-[#591c10] text-white"
+									>
+										+ Add Item
+									</Button>
+								</div>
 							</div>
 
 							<div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-								{/* Discount */}
-								{/* <div className="md:col-span-4">
+								{/* Discount General */}
+								<div className="md:col-span-4">
 									<div className="bg-[#fffaf0] border border-[#f4e3d3] rounded-md px-4 py-3 h-full">
 										<Label className="block text-sm text-gray-700 mb-2">Discount (Optional)</Label>
 										<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -321,7 +400,9 @@ export default function CreateInvoicePage() {
 													min={0}
 													max={100}
 													value={
-														discountMode === "percent" ? discountInput : discountPercent.toFixed(2)
+														discountMode === "percent"
+															? discountInput
+															: discountPercent.toFixed(2) || 0
 													}
 													onChange={(e) => {
 														setDiscountMode("percent");
@@ -346,7 +427,7 @@ export default function CreateInvoicePage() {
 									</div>
 								</div>
 
-								<div className="md:col-span-8 hidden md:block"></div> */}
+								<div className="md:col-span-8 hidden md:block"></div>
 
 								{/* Subtotal */}
 								<div className="md:col-span-4">

@@ -13,6 +13,7 @@ export const getInvoiceByNumber = async (invoiceNumber) => {
 				productId,
 				sizePriceId,
 				quantity,
+				discountAmount,
 				product:Product(id, name),
 				sizePrice:ProductSizePrice(id, price, size)
 			)

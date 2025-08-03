@@ -32,13 +32,17 @@ const InvoicePreview = forwardRef(
 				const mappedItems = invoiceItems.map((item) => {
 					const product = products.find((p) => p.id === item.productId);
 					const size = sizes.find((s) => s.id === item.sizePriceId);
+					const price = size?.price || 0;
+					const discount = item.discountAmount || 0;
+					const quantity = item.quantity;
 
 					return {
 						productName: product?.name || "Unknown",
 						sizeName: size?.size || "Unknown",
-						quantity: item.quantity,
-						price: size?.price || 0,
-						total: item.quantity * (size?.price || 0),
+						quantity,
+						price,
+						discountAmount: discount,
+						total: quantity * price - discount,
 					};
 				});
 
@@ -48,7 +52,10 @@ const InvoicePreview = forwardRef(
 			}
 		}, [invoiceItems, products, sizes]);
 
-		const subtotal = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
+		const subtotal = items.reduce((acc, item) => acc + item.total, 0);
+		const discount = invoice.discount || 0;
+
+		const discountPercent = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
 
 		const TOTAL_GAP_ROWS = 10;
 		const gapRows = Math.max(0, TOTAL_GAP_ROWS - items.length);
@@ -65,16 +72,30 @@ const InvoicePreview = forwardRef(
 					.thanks-msg {
 						font-family: "Pattaya", cursive;
 					}
+
+					.invoice-content * {
+						box-sizing: border-box;
+					}
+
+					.invoice-content table td,
+					.invoice-content table th {
+						padding: 8px 12px; /* ~px-3 py-2 */
+						white-space: nowrap;
+					}
 				`}</style>
 
 				<div
 					ref={ref}
 					className={cn(
-						"mx-auto border border-[#6D2315] p-4 font-sans text-sm text-gray-900 overflow-x-auto invoice-content",
-						isDownloadVersion ? "w-[794px]" : "w-full md:w-[794px]"
+						"mx-auto border border-[#6D2315] font-sans text-sm text-gray-900 invoice-content",
+						isDownloadVersion
+							? "w-[880px] overflow-hidden p-3"
+							: "w-full md:w-[880px] overflow-x-auto p-4"
 					)}
 				>
-					<div className={cn("flex", isDownloadVersion ? "flex-row" : "flex-col md:flex-row")}>
+					<div
+						className={cn("flex w-full", isDownloadVersion ? "flex-row" : "flex-col md:flex-row")}
+					>
 						{/* LEFT SECTION */}
 						<div
 							className={cn(
@@ -146,35 +167,64 @@ const InvoicePreview = forwardRef(
 								<h1 className="font-bold text-lg uppercase">invoice pembayaran</h1>
 								<div className="flex justify-between text-xs mt-1">
 									<span>Invoice No. {invoice?.invoiceNumber}</span>
-									<span>{formatDateFilename(invoice?.invoiceDate)}</span>
+									<span className="whitespace-nowrap">
+										{formatDateFilename(invoice?.invoiceDate)}
+									</span>
 								</div>
 							</div>
 
-							<div className="overflow-x-auto">
+							<div
+								className={cn(
+									!isDownloadVersion && "overflow-x-auto max-w-full",
+									isDownloadVersion && "overflow-hidden"
+								)}
+							>
 								<table
-									className="w-full text-left text-sm"
-									style={{ border: "1.5px solid #6D2315" }}
+									className="text-left text-sm"
+									style={{
+										border: "1.5px solid #6D2315",
+										tableLayout: "auto",
+										width: isDownloadVersion ? "100%" : "auto",
+									}}
 								>
 									<thead
 										style={{ backgroundColor: "white", borderBottom: "1.5px solid #6D2315" }}
 										className="uppercase"
 									>
 										<tr>
-											<th className="p-2">item</th>
-											<th className="p-2">ukuran</th>
-											<th className="p-2">jml</th>
-											<th className="p-2">harga</th>
-											<th className="p-2">total</th>
+											<th className="px-2.5 py-2 whitespace-nowrap">item</th>
+											<th className="px-2.5 py-2 whitespace-nowrap">ukuran</th>
+											<th className="px-2.5 py-2 whitespace-nowrap">jml</th>
+											<th className="px-2.5 py-2 whitespace-nowrap">harga</th>
+											<th className="px-2.5 py-2 whitespace-nowrap">diskon</th>
+											<th className="px-2.5 py-2 whitespace-nowrap">total</th>
 										</tr>
 									</thead>
 									<tbody>
 										{items.map((item, i) => (
 											<tr key={i}>
-												<td className="p-2">{item.productName}</td>
-												<td className="p-2 text-center">{item.sizeName}</td>
-												<td className="p-2 text-center">{item.quantity}</td>
-												<td className="p-2">{`Rp ${item.price.toLocaleString("id-ID")}`}</td>
-												<td className="p-1">{`Rp ${item.total.toLocaleString("id-ID")}`}</td>
+												<td className="px-2.5 py-2 whitespace-nowrap">{item.productName}</td>
+												<td className="px-2.5 py-2 whitespace-nowrap text-center">
+													{item.sizeName}
+												</td>
+												<td className="px-2.5 py-2 whitespace-nowrap text-center">
+													{item.quantity}
+												</td>
+												<td className="px-2.5 py-2 whitespace-nowrap">{`Rp ${item.price.toLocaleString(
+													"id-ID"
+												)}`}</td>
+												<td
+													className={`px-2.5 py-2 whitespace-nowrap text-center ${
+														item.discountAmount > 0 ? "text-green-600" : ""
+													}`}
+												>
+													{item.discountAmount
+														? `-Rp ${item.discountAmount.toLocaleString("id-ID")}`
+														: "-"}
+												</td>
+												<td className="p-1 whitespace-nowrap">
+													{item.total ? `Rp ${item.total.toLocaleString("id-ID")}` : "-"}
+												</td>
 											</tr>
 										))}
 
@@ -193,27 +243,52 @@ const InvoicePreview = forwardRef(
 
 										{/* Subtotal */}
 										<tr style={{ borderTop: "1.5px solid #6D2315" }}>
-											<td colSpan="4" className="p-2 text-right uppercase">
+											<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
 												Sub Total :
 											</td>
-											<td className="p-2">Rp {subtotal.toLocaleString("id-ID")}</td>
+											<td className="px-2.5 py-2 whitespace-nowrap">
+												Rp {subtotal.toLocaleString("id-ID")}
+											</td>
 										</tr>
+
+										{/* Diskon */}
+										{invoice?.discount > 0 && (
+											<tr className="text-green-500">
+												<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
+													diskon ({discountPercent}%) :
+												</td>
+												<td className="px-2.5 py-2 whitespace-nowrap">
+													-Rp{" "}
+													{typeof invoice.discount === "number"
+														? invoice.discount.toLocaleString("id-ID")
+														: "0"}
+												</td>
+											</tr>
+										)}
 
 										{/* Ongkir */}
 										<tr>
-											<td colSpan="4" className="p-2 text-right uppercase">
+											<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
 												ongkir :
 											</td>
-											<td className="p-2">Rp {invoice?.shipping?.toLocaleString("id-ID")}</td>
+											<td className="px-2.5 py-2 whitespace-nowrap">
+												Rp {invoice?.shipping?.toLocaleString("id-ID")}
+											</td>
 										</tr>
 
 										{/* Total */}
 										<tr style={{ borderBottom: "1.5px solid #6D2315" }}>
-											<td colSpan="4" className="p-2 text-right font-bold text-red-700 uppercase">
+											<td
+												colSpan="5"
+												className="px-2.5 py-2 text-right font-bold text-red-700 uppercase"
+											>
 												jumlah yang harus dibayar :
 											</td>
-											<td className="p-2 font-bold text-red-700">
-												Rp {invoice?.totalPrice?.toLocaleString("id-ID")}
+											<td className="px-2.5 py-2 font-bold text-red-700 whitespace-nowrap">
+												Rp{" "}
+												{typeof invoice.totalPrice === "number"
+													? invoice.totalPrice.toLocaleString("id-ID")
+													: "0"}
 											</td>
 										</tr>
 									</tbody>

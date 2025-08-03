@@ -60,7 +60,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 				className="max-w-full w-full max-h-[90vh] overflow-y-auto p-0 md:max-w-4xl"
 				style={{ margin: "auto" }}
 			>
-				<div ref={hiddenRef} className="absolute -left-[9999px] top-0 bg-white p-2 w-[794px]">
+				<div ref={hiddenRef} className="absolute -left-[9999px] top-0 bg-white p-2 w-[900px]">
 					<InvoicePreview invoice={invoice} invoiceItems={invoiceItems} isDownloadVersion />
 				</div>
 

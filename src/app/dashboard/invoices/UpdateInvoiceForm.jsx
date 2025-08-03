@@ -21,7 +21,7 @@ import StatusCombobox from "./_components/StatusCombobox";
 import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 
-import { getPageTitle } from "@/lib/utils";
+import { calculateDiscountAmount, calculateDiscountPercent, getPageTitle } from "@/lib/utils";
 import { ChevronRight, Trash2 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -44,6 +44,9 @@ export default function UpdateInvoiceForm({ invoice }) {
 	const [shippingPrice, setShippingPrice] = useState(invoice.shipping || 0);
 	const [status, setStatus] = useState(invoice.status || "pending");
 
+	const [discountMode, setDiscountMode] = useState("amount");
+	const [discountInput, setDiscountInput] = useState(0);
+
 	useEffect(() => {
 		const fetchData = async () => {
 			const { data: productsData } = await getAllProducts();
@@ -58,19 +61,43 @@ export default function UpdateInvoiceForm({ invoice }) {
 
 	useEffect(() => {
 		if (invoice?.items?.length) {
-			const mappedItems = invoice.items.map((item) => ({
-				productId: item.productId,
-				sizePriceId: item.sizePriceId,
-				quantity: item.quantity,
-				price: item.sizePrice?.price || 0,
-				total: item.quantity * (item.sizePrice?.price || 0),
-			}));
+			const mappedItems = invoice.items.map((item) => {
+				const quantity = item.quantity || 0;
+				const price = item.sizePrice?.price || 0;
+				const subtotal = quantity * price;
+
+				const discountAmount = item.discountAmount || 0;
+
+				return {
+					productId: item.productId,
+					sizePriceId: item.sizePriceId,
+					quantity,
+					price,
+					discountAmount,
+					discountInput: String(discountAmount),
+					discountMode: "amount",
+					total: subtotal - discountAmount,
+				};
+			});
+
 			setItems(mappedItems);
+		}
+
+		if (invoice?.discount !== undefined) {
+			setDiscountInput(String(invoice.discount));
+			setDiscountMode("amount");
 		}
 	}, [invoice]);
 
 	const handleUpdate = async (e) => {
 		e.preventDefault();
+
+		const isInvalid = items.some((item) => !item.productId || !item.sizePriceId);
+
+		if (isInvalid) {
+			toast.error("You must add product and size before submitting!");
+			return;
+		}
 
 		const { error } = await supabase
 			.from("Invoice")
@@ -79,6 +106,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 				buyerName,
 				invoiceDate,
 				totalPrice,
+				discount: discountAmount,
 				shipping: parseInt(shippingPrice),
 				status,
 			})
@@ -95,7 +123,8 @@ export default function UpdateInvoiceForm({ invoice }) {
 				productId: item.productId,
 				sizePriceId: item.sizePriceId,
 				quantity: item.quantity,
-				subtotal: item.quantity * (item.price || 0),
+				subtotal: item.quantity * (item.price || 0) - item.discountAmount,
+				discountAmount: item.discountAmount || 0,
 			}));
 
 			const { error: itemError } = await supabase.from("InvoiceItem").insert(itemsToInsert);
@@ -111,36 +140,60 @@ export default function UpdateInvoiceForm({ invoice }) {
 		}
 	};
 
-	const handleItemChange = (index, field, value) => {
+	const handleItemChange = (index, field, value, mode = null) => {
 		const updatedItems = [...items];
+		const item = updatedItems[index];
 
-		if (field === "quantity") {
-			if (value === "") {
-				updatedItems[index][field] = "";
-			} else {
-				const parsed = parseInt(value, 10);
-
-				if (isNaN(parsed)) {
-					toast.error("Field must be number");
-					updatedItems[index][field] = "";
-				} else if (parsed < 1) {
-					toast.error("The value must be 1 or more");
-					updatedItems[index][field] = 1;
-				} else {
-					updatedItems[index][field] = parsed;
-				}
-			}
+		if (field === "sizePriceId") {
+			const selectedSize = sizes.find((s) => s.id === value);
+			item.sizePriceId = value;
+			item.price = selectedSize?.price || 0;
+		} else if (field === "quantity") {
+			const parsed = parseInt(value, 10);
+			item.quantity = isNaN(parsed) || parsed < 1 ? 1 : parsed;
+		} else if (field === "price") {
+			const parsed = parseInt(value, 10);
+			item.price = isNaN(parsed) ? 0 : parsed;
+		} else if (field === "discountMode") {
+			item.discountMode = value;
+		} else if (field === "discountInput") {
+			item.discountInput = value;
+			item.discountMode = mode;
 		} else {
-			updatedItems[index][field] = value;
+			item[field] = value;
 		}
 
-		// Hitung ulang total
-		const price = updatedItems[index].price || 0;
-		const quantity = updatedItems[index].quantity || 1;
-		updatedItems[index].total = price * quantity;
+		const qty = item.quantity || 0;
+		const price = item.price || 0;
+
+		const rawTotal = qty * price;
+
+		const discountAmount = calculateDiscountAmount({
+			quantity: item.quantity,
+			price: item.price,
+			discountInput: item.discountInput,
+			discountMode: item.discountMode,
+		});
+
+		item.discountAmount = discountAmount;
+		item.total = rawTotal - discountAmount;
 
 		setItems(updatedItems);
 	};
+
+	const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+
+	const discountAmount =
+		discountMode === "percent"
+			? Math.round(((parseFloat(discountInput) || 0) / 100) * subtotal)
+			: parseInt(discountInput) || 0;
+
+	const discountPercent =
+		discountMode === "amount"
+			? ((parseInt(discountInput) || 0) / subtotal) * 100
+			: parseFloat(discountInput) || 0;
+
+	const totalPrice = subtotal + (parseInt(shippingPrice) || 0) - discountAmount;
 
 	const addItem = () => {
 		setItems([
@@ -150,6 +203,9 @@ export default function UpdateInvoiceForm({ invoice }) {
 				sizePriceId: "",
 				price: 0,
 				quantity: 1,
+				discountAmount: 0,
+				discountInput: "0",
+				discountMode: "amount",
 				total: 0,
 			},
 		]);
@@ -160,9 +216,6 @@ export default function UpdateInvoiceForm({ invoice }) {
 		updated.splice(index, 1);
 		setItems(updated);
 	};
-
-	const subtotal = items.reduce((acc, item) => acc + (item.price || 0) * item.quantity, 0);
-	const totalPrice = subtotal + parseInt(shippingPrice || 0);
 
 	return (
 		<section className="w-full px-4 py-6 bg-[#fffaf0]">
@@ -214,92 +267,175 @@ export default function UpdateInvoiceForm({ invoice }) {
 							</div>
 
 							{/* Items */}
-
-							<div className="space-y-6">
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 								{items.map((item, index) => (
-									<div
-										key={index}
-										className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-[#fceee4] rounded-md bg-[#fffefb]"
-									>
-										<div className="md:col-span-4">
-											<Label className="mb-1 block text-sm text-gray-700">Items</Label>
-											<ProductCombobox
-												products={products}
-												value={item.productId}
-												onChange={(val) => handleItemChange(index, "productId", val)}
-											/>
-										</div>
-										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm text-gray-700">Size</Label>
-											<SizeCombobox
-												sizes={sizes}
-												value={item.sizePriceId}
-												onChange={(val, price) => {
-													handleItemChange(index, "sizePriceId", val);
-													handleItemChange(index, "price", price);
-												}}
-											/>
-										</div>
-										<div className="md:col-span-1">
-											<Label className="mb-1 block text-sm text-gray-700">Qty</Label>
-											<Input
-												type="number"
-												placeholder="Qty"
-												value={item.quantity === "" ? "" : item.quantity}
-												onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-												required
-											/>
-										</div>
-										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm text-gray-700">Price</Label>
-											<Input
-												type="number"
-												placeholder="Price"
-												value={item.price || 0}
-												className="bg-gray-100"
-												disabled
-											/>
-										</div>
-										<div className="md:col-span-2">
-											<Label className="mb-1 block text-sm text-gray-700">Total</Label>
-											<Input
-												value={item.total.toLocaleString("id-ID")}
-												disabled
-												className="bg-gray-100"
-											/>
-										</div>
-										<div className="md:col-span-1 flex justify-end mt-2 md:mt-6">
-											<Button
-												type="button"
-												variant="destructive"
-												onClick={() => removeItem(index)}
-												className="w-full md:w-10 h-10"
-											>
-												<Trash2 className="h-4 w-4" />
-											</Button>
+									<div key={index}>
+										<h3 className="text-sm font-medium text-[#6D2315] mb-1">Item {index + 1}</h3>
+
+										<div className="bg-[#fffefb] border border-[#fceee4] rounded-md p-4 space-y-3">
+											{/* Item Select */}
+											<div>
+												<Label className="text-sm text-gray-700 mb-1 block">Item</Label>
+												<ProductCombobox
+													products={products}
+													value={item.productId}
+													onChange={(val) => handleItemChange(index, "productId", val)}
+												/>
+											</div>
+
+											{/* Size & Qty */}
+											<div className="grid grid-cols-2 gap-2">
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Size</Label>
+													<SizeCombobox
+														sizes={sizes}
+														value={item.sizePriceId}
+														onChange={(val, price) => {
+															handleItemChange(index, "sizePriceId", val);
+															handleItemChange(index, "price", price);
+														}}
+													/>
+												</div>
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Qty</Label>
+													<Input
+														type="number"
+														value={item.quantity}
+														onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+														required
+													/>
+												</div>
+											</div>
+
+											{/* Price & Total */}
+											<div className="grid grid-cols-2 gap-2">
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Price</Label>
+													<Input
+														type="number"
+														value={item.price}
+														disabled
+														className="bg-gray-100"
+													/>
+												</div>
+												<div>
+													<Label className="text-sm text-gray-700 mb-1 block">Total</Label>
+													<Input
+														value={item.total.toLocaleString("id-ID")}
+														disabled
+														className="bg-gray-100"
+													/>
+												</div>
+											</div>
+
+											{/* Discount Each Item */}
+											<div>
+												<Label className="text-sm text-gray-700 mb-1 block">
+													Discount (Optional)
+												</Label>
+												<div className="grid grid-cols-2 gap-2">
+													<Input
+														type="number"
+														placeholder="%"
+														min={0}
+														max={100}
+														value={
+															item.discountMode === "percent"
+																? item.discountInput
+																: calculateDiscountPercent(item)
+														}
+														onChange={(e) =>
+															handleItemChange(index, "discountInput", e.target.value, "percent")
+														}
+													/>
+													<Input
+														type="number"
+														placeholder="Rp"
+														min={0}
+														value={
+															item.discountMode === "amount"
+																? item.discountInput
+																: item.discountAmount
+														}
+														onChange={(e) =>
+															handleItemChange(index, "discountInput", e.target.value, "amount")
+														}
+													/>
+												</div>
+											</div>
+
+											{/* Delete button */}
+											<div className="flex justify-end">
+												<Button
+													type="button"
+													variant="destructive"
+													onClick={() => removeItem(index)}
+													className="h-9 px-3"
+												>
+													<Trash2 className="w-4 h-4" />
+												</Button>
+											</div>
 										</div>
 									</div>
 								))}
-								<Button
-									type="button"
-									onClick={addItem}
-									className="mt-2 bg-[#6D2315] hover:bg-[#591c10] text-white"
-								>
-									+ Add Item
-								</Button>
+
+								{/* Add Item Button */}
+								<div className="md:col-span-3">
+									<Button
+										type="button"
+										onClick={addItem}
+										className="mt-2 bg-[#6D2315] hover:bg-[#591c10] text-white"
+									>
+										+ Add Item
+									</Button>
+								</div>
 							</div>
 
 							{/* Shipping & Total */}
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<div>
-									<Label className="py-2 block text-sm text-gray-700">Shipping Price</Label>
-									<Input
-										type="number"
-										value={shippingPrice}
-										onChange={(e) => setShippingPrice(e.target.value)}
-									/>
+							<div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+								{/* Discount General */}
+								<div className="md:col-span-4">
+									<div className="bg-[#fffaf0] border border-[#f4e3d3] rounded-md px-4 py-3 h-full">
+										<Label className="block text-sm text-gray-700 mb-2">Discount (Optional)</Label>
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+											<div>
+												<Label className="text-xs text-gray-500 mb-1 block">Percent (%)</Label>
+												<Input
+													type="number"
+													min={0}
+													max={100}
+													value={
+														discountMode === "percent"
+															? discountInput
+															: discountPercent.toFixed(2) || 0
+													}
+													onChange={(e) => {
+														setDiscountMode("percent");
+														setDiscountInput(e.target.value);
+													}}
+												/>
+											</div>
+
+											<div>
+												<Label className="text-xs text-gray-500 mb-1 block">Amount (Rp)</Label>
+												<Input
+													type="number"
+													min={0}
+													value={discountMode === "amount" ? discountInput : discountAmount}
+													onChange={(e) => {
+														setDiscountMode("amount");
+														setDiscountInput(e.target.value);
+													}}
+												/>
+											</div>
+										</div>
+									</div>
 								</div>
-								<div>
+
+								<div className="md:col-span-8 hidden md:block"></div>
+
+								{/* Subtotal */}
+								<div className="md:col-span-4">
 									<Label className="py-2 block text-sm text-gray-700">Subtotal</Label>
 									<Input
 										value={subtotal.toLocaleString("id-ID")}
@@ -307,7 +443,19 @@ export default function UpdateInvoiceForm({ invoice }) {
 										className="bg-gray-100"
 									/>
 								</div>
-								<div>
+
+								{/* Shipping */}
+								<div className="md:col-span-4">
+									<Label className="py-2 block text-sm text-gray-700">Shipping Price</Label>
+									<Input
+										type="number"
+										value={shippingPrice}
+										onChange={(e) => setShippingPrice(e.target.value)}
+									/>
+								</div>
+
+								{/* Total */}
+								<div className="md:col-span-4">
 									<Label className="py-2 block text-sm text-gray-700">Total Price</Label>
 									<Input
 										value={totalPrice.toLocaleString("id-ID")}

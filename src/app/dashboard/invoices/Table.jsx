@@ -114,57 +114,67 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 						</tr>
 					</thead>
 					<tbody>
-						{paginatedData.map((data) => (
-							<tr
-								key={data.id}
-								className="border-t border-[#fceee4] hover:bg-[#fff3ec] transition-colors"
-							>
-								<td className="px-4 py-2 text-gray-800">{data.invoiceNumber}</td>
-								<td className="px-4 py-2 text-gray-800">{toTitleCase(data.buyerName)}</td>
-								<td className="px-4 py-2 text-gray-800">
-									Rp. {(data.totalPrice || 0).toLocaleString("id-ID")}
-								</td>
-								<td className="px-4 py-2 text-gray-800">
-									{formatInvoiceDateTime(data.invoiceDate, data.createdAt)}
-								</td>
-								<td className="px-4 py-2 text-gray-800">
-									<span className={getStatusVariant(data.status)}>{toTitleCase(data.status)}</span>
-								</td>
-								<td className="px-4 py-2">
-									<div className="flex gap-2">
-										<Button
-											onClick={() => {
-												router.push(`/dashboard/invoices/${data.invoiceNumber}`);
-											}}
-											variant="ghost"
-											size="icon"
-											className="text-blue-500 hover:text-blue-600"
-										>
-											<Pencil className="h-4 w-4" />
-										</Button>
-										<Button
-											onClick={() => {
-												setSelectedInvoice(data);
-												setDeleteModalOpen(true);
-											}}
-											variant="ghost"
-											size="icon"
-											className="text-red-500 hover:text-red-600"
-										>
-											<Trash2 className="h-4 w-4" />
-										</Button>
-										<Button
-											onClick={() => handleDownload(data.id)}
-											variant="ghost"
-											size="icon"
-											className="text-green-500 hover:text-green-600"
-										>
-											<Download className="h-4 w-4" />
-										</Button>
-									</div>
+						{paginatedData && paginatedData.length > 0 ? (
+							paginatedData.map((data) => (
+								<tr
+									key={data.id}
+									className="border-t border-[#fceee4] hover:bg-[#fff3ec] transition-colors"
+								>
+									<td className="px-4 py-2 text-gray-800">{data.invoiceNumber}</td>
+									<td className="px-4 py-2 text-gray-800">{toTitleCase(data.buyerName)}</td>
+									<td className="px-4 py-2 text-gray-800">
+										Rp. {(data.totalPrice || 0).toLocaleString("id-ID")}
+									</td>
+									<td className="px-4 py-2 text-gray-800">
+										{formatInvoiceDateTime(data.invoiceDate, data.createdAt)}
+									</td>
+									<td className="px-4 py-2 text-gray-800">
+										<span className={getStatusVariant(data.status)}>
+											{toTitleCase(data.status)}
+										</span>
+									</td>
+									<td className="px-4 py-2">
+										<div className="flex gap-2">
+											<Button
+												onClick={() => {
+													router.push(`/dashboard/invoices/${data.invoiceNumber}`);
+												}}
+												variant="ghost"
+												size="icon"
+												className="text-blue-500 hover:text-blue-600"
+											>
+												<Pencil className="h-4 w-4" />
+											</Button>
+											<Button
+												onClick={() => {
+													setSelectedInvoice(data);
+													setDeleteModalOpen(true);
+												}}
+												variant="ghost"
+												size="icon"
+												className="text-red-500 hover:text-red-600"
+											>
+												<Trash2 className="h-4 w-4" />
+											</Button>
+											<Button
+												onClick={() => handleDownload(data.id)}
+												variant="ghost"
+												size="icon"
+												className="text-green-500 hover:text-green-600"
+											>
+												<Download className="h-4 w-4" />
+											</Button>
+										</div>
+									</td>
+								</tr>
+							))
+						) : (
+							<tr>
+								<td colSpan="6" className="px-4 py-6 text-center text-gray-500">
+									No invoice data
 								</td>
 							</tr>
-						))}
+						)}
 					</tbody>
 				</table>
 			</div>

@@ -8,6 +8,7 @@ export const submitInvoice = async ({
 	buyerName,
 	invoiceDate,
 	shippingPrice,
+	discountAmount = 0,
 	totalPrice,
 	items,
 	user,
@@ -41,6 +42,7 @@ export const submitInvoice = async ({
 				buyerName,
 				invoiceDate: new Date(invoiceDate),
 				shipping: parseInt(shippingPrice) || 0,
+				discount: discountAmount,
 				totalPrice: totalPrice,
 				status: "pending",
 				userId: user?.id,
@@ -62,6 +64,7 @@ export const submitInvoice = async ({
 		sizePriceId: item.sizePriceId,
 		quantity: item.quantity,
 		subtotal: item.total,
+		discountAmount: item.discountAmount || 0,
 	}));
 
 	const { error: itemError } = await supabase.from("InvoiceItem").insert(invoiceItems);

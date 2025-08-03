@@ -192,7 +192,7 @@ export default async function Dashboard() {
 							</div>
 						))
 					) : (
-						<p className="text-sm text-gray-500">Belum ada invoice.</p>
+						<p className="text-sm text-gray-500">No invoice data.</p>
 					)}
 				</CardContent>
 			</Card>
