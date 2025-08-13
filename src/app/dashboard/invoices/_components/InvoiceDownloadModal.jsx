@@ -16,6 +16,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 	const invoiceRef = useRef(null);
 	const hiddenRef = useRef(null);
 
+	const [dataReady, setDataReady] = useState(false);
 	const [isInvoiceReady, setIsInvoiceReady] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 			return;
 		}
 
-		if (!isInvoiceReady) {
+		if (!isInvoiceReady || !dataReady) {
 			toast.error("Wait a second. Invoice is loading ..");
 			return;
 		}
@@ -57,17 +58,32 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 				<DialogTitle className="sr-only">Preview Invoice</DialogTitle>
 			</DialogHeader>
 			<DialogContent
-				className="max-w-full w-full max-h-[90vh] overflow-y-auto p-0 md:max-w-4xl"
+				className="max-w-full w-auto max-h-[90vh] overflow-y-auto p-0 md:max-w-5xl"
 				style={{ margin: "auto" }}
 			>
-				<div ref={hiddenRef} className="absolute -left-[9999px] top-0 bg-white p-2 w-[900px]">
-					<InvoicePreview invoice={invoice} invoiceItems={invoiceItems} isDownloadVersion />
+				<div
+					ref={hiddenRef}
+					className="absolute -left-[9999px] top-0 bg-white p-2"
+					style={{
+						width: "max-content",
+						display: "inline-block",
+						overflow: "visible",
+					}}
+				>
+					<InvoicePreview
+						invoice={invoice}
+						invoiceItems={invoiceItems}
+						onDataReady={setDataReady}
+						oonReady={() => setIsInvoiceReady(true)}
+						isDownloadVersion
+					/>
 				</div>
 
 				<div ref={invoiceRef} className="bg-white p-6">
 					<InvoicePreview
 						invoice={invoice}
 						invoiceItems={invoiceItems}
+						onDataReady={setDataReady}
 						onReady={() => setIsInvoiceReady(true)}
 					/>
 				</div>

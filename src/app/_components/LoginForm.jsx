@@ -10,21 +10,26 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { toast } from "sonner";
-import { LockIcon } from "lucide-react";
+import { Loader2Icon, LockIcon } from "lucide-react";
 
 export default function LoginForm() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 
+	const [loading, setLoading] = useState(false);
+
 	const router = useRouter();
 
 	const handleLogin = async (e) => {
 		e.preventDefault();
 		setError("");
+		setLoading(true);
 
 		const supabase = supabaseBrowser();
 		const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+		setLoading(false);
 
 		if (error) {
 			toast.error(error.message);
@@ -78,8 +83,19 @@ export default function LoginForm() {
 
 						{error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
-						<Button type="submit" className="w-full bg-[#6d2315] hover:bg-[#591c10]">
-							Login
+						<Button
+							type="submit"
+							className="w-full bg-[#6d2315] hover:bg-[#591c10]"
+							disabled={loading}
+						>
+							{loading ? (
+								<>
+									<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+									Logging in...
+								</>
+							) : (
+								"Login"
+							)}
 						</Button>
 					</form>
 				</CardContent>

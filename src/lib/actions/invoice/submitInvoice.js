@@ -14,8 +14,13 @@ export const submitInvoice = async ({
 	user,
 	onReset,
 }) => {
-	if (!invoiceNumber || !buyerName || items.length === 0) {
-		toast.error("These fields are required!");
+	if (!user) {
+		toast.error("User not log in");
+		return;
+	}
+
+	if (!invoiceNumber.trim() || !buyerName.trim() || items.length === 0) {
+		toast.error("Invoice number, buyer name, and at least one item are required!");
 		return;
 	}
 
@@ -26,7 +31,7 @@ export const submitInvoice = async ({
 		.from("Invoice")
 		.select("id")
 		.eq("invoiceNumber", invoiceNumber)
-		.single();
+		.maybeSingle();
 
 	if (existing) {
 		toast.error("Invoice number already existed!");
@@ -34,49 +39,48 @@ export const submitInvoice = async ({
 	}
 
 	// Simpan invoice
-	const { data: invoice, error: invoiceError } = await supabase
-		.from("Invoice")
-		.insert([
-			{
-				invoiceNumber,
-				buyerName,
-				invoiceDate: new Date(invoiceDate),
-				shipping: parseInt(shippingPrice) || 0,
-				discount: discountAmount,
-				totalPrice: totalPrice,
-				status: "pending",
-				userId: user?.id,
-			},
-		])
-		.select()
-		.single();
+	try {
+		const { data: invoice, error: invoiceError } = await supabase
+			.from("Invoice")
+			.insert([
+				{
+					invoiceNumber,
+					buyerName,
+					invoiceDate: new Date(invoiceDate),
+					shipping: parseInt(shippingPrice) || 0,
+					discount: discountAmount,
+					totalPrice: totalPrice,
+					status: "pending",
+					userId: user.id,
+				},
+			])
+			.select()
+			.single();
 
-	if (invoiceError || !invoice) {
-		console.error(invoiceError);
-		toast.error("Failed to create invoice");
-		return;
+		if (invoiceError || !invoice) {
+			throw new Error(invoiceError?.message || "Failed to insert invoice");
+		}
+
+		const invoiceItems = items.map((item) => ({
+			invoiceId: invoice.id,
+			productId: item.productId,
+			sizePriceId: item.sizePriceId,
+			quantity: item.quantity,
+			subtotal: item.total,
+			discountAmount: item.discountAmount || 0,
+		}));
+
+		const { error: itemError } = await supabase.from("InvoiceItem").insert(invoiceItems);
+
+		if (itemError) {
+			throw new Error(itemError.message);
+		}
+
+		toast.success("Invoice has been created");
+
+		if (onReset) onReset();
+	} catch (err) {
+		console.error("Submit invoice error:", err);
+		toast.error("Something went wrong while saving invoice");
 	}
-
-	// Simpan item
-	const invoiceItems = items.map((item) => ({
-		invoiceId: invoice.id,
-		productId: item.productId,
-		sizePriceId: item.sizePriceId,
-		quantity: item.quantity,
-		subtotal: item.total,
-		discountAmount: item.discountAmount || 0,
-	}));
-
-	const { error: itemError } = await supabase.from("InvoiceItem").insert(invoiceItems);
-
-	if (itemError) {
-		console.error(itemError);
-		toast.error("Failed to save invoice item");
-		return;
-	}
-
-	toast.success("Invoice has been created");
-
-	// Reset form dari luar
-	if (onReset) onReset();
 };

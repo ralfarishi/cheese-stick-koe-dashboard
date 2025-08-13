@@ -38,88 +38,76 @@ export default function CreateInvoicePage() {
 	const [lastInvoiceNumber, setLastInvoiceNumber] = useState(null);
 
 	const [shippingPrice, setShippingPrice] = useState(0);
-	const [items, setItems] = useState([
-		{
-			productId: "",
-			sizePriceId: "",
-			quantity: 1,
-			price: 0,
-			discountMode: "amount" | "percent",
-			discountInput: "",
-			discountAmount: 0,
-			total: 0,
-		},
-	]);
+
+	const resetForm = () => {
+		setInvoiceNumber("");
+		setBuyerName("");
+		setInvoiceDate(new Date().toISOString());
+		setShippingPrice(0);
+		setDiscountInput(0);
+		setItems([createEmptyItem()]);
+	};
+
+	const createEmptyItem = () => ({
+		productId: "",
+		sizePriceId: "",
+		quantity: 1,
+		price: 0,
+		discountMode: "amount" | "percent",
+		discountInput: "",
+		discountAmount: 0,
+		total: 0,
+	});
+
+	const [items, setItems] = useState([createEmptyItem()]);
 
 	// general discount
 	const [discountMode, setDiscountMode] = useState("amount");
 	const [discountInput, setDiscountInput] = useState(0);
 
 	useEffect(() => {
-		const fetchLastInvoice = async () => {
-			const supabase = supabaseBrowser();
+		const fetchInitialData = async () => {
+			const [{ data: userData }, { data: lastInvoice }] = await Promise.all([
+				supabase.auth.getUser(),
+				supabase
+					.from("Invoice")
+					.select("invoiceNumber, invoiceDate")
+					.order("invoiceDate", { ascending: false })
+					.limit(1)
+					.single(),
+			]);
 
-			const { data, error } = await supabase
-				.from("Invoice")
-				.select("invoiceNumber, invoiceDate")
-				.order("invoiceDate", { ascending: false })
-				.limit(1)
-				.single();
-
-			if (data) {
-				setLastInvoiceNumber(data.invoiceNumber);
-			}
+			if (userData?.user) setUser(userData.user);
+			if (lastInvoice) setLastInvoiceNumber(lastInvoice.invoiceNumber);
 		};
 
-		const getUser = async () => {
-			const { data, error } = await supabase.auth.getUser();
-
-			if (error) {
-				console.error("Failed to get user:", error.message);
-			} else {
-				setUser(data.user);
-			}
-		};
-
-		fetchLastInvoice();
-		getUser();
+		fetchInitialData();
 	}, []);
 
 	const addItem = () => {
-		setItems([
-			...items,
-			{
-				productId: "",
-				sizePriceId: "",
-				quantity: 1,
-				price: 0,
-				discountMode: "amount" | "percent",
-				discountInput: "",
-				discountAmount: 0,
-				total: 0,
-			},
-		]);
+		setItems([...items, createEmptyItem()]);
 	};
 
 	const removeItem = (index) => {
-		const newItems = items.filter((_, i) => i !== index);
-		setItems(newItems);
+		setItems((prev) => prev.filter((_, i) => i !== index));
 	};
 
 	useEffect(() => {
-		(async () => {
-			const { data: prods } = await getAllProducts();
-			const { data: szs } = await getAllSizePrice();
+		const fetchOptions = async () => {
+			const [{ data: prods }, { data: szs }] = await Promise.all([
+				getAllProducts(),
+				getAllSizePrice(),
+			]);
+
 			setProducts(prods || []);
 			setSizes(szs || []);
-		})();
+		};
+
+		fetchOptions();
 	}, []);
 
 	// Kalkulasi total per item dan subtotal
-	const handleItemChange = (index, field, value, mode = null) => {
-		const updatedItems = [...items];
-		const item = updatedItems[index];
-
+	const updateItemField = (item, field, value, mode = null) => {
 		if (field === "sizePriceId") {
 			const selectedSize = sizes.find((s) => s.id === value);
 			item.sizePriceId = value;
@@ -141,7 +129,6 @@ export default function CreateInvoicePage() {
 
 		const qty = item.quantity || 0;
 		const price = item.price || 0;
-
 		const rawTotal = qty * price;
 
 		const discountAmount = calculateDiscountAmount({
@@ -153,7 +140,13 @@ export default function CreateInvoicePage() {
 
 		item.discountAmount = discountAmount;
 		item.total = rawTotal - discountAmount;
+	};
 
+	const handleItemChange = (index, field, value, mode = null) => {
+		const updatedItems = [...items];
+		const item = updatedItems[index];
+
+		updateItemField(item, field, value, mode);
 		setItems(updatedItems);
 	};
 
@@ -195,23 +188,7 @@ export default function CreateInvoicePage() {
 			totalPrice,
 			items,
 			user,
-			onReset: () => {
-				setInvoiceNumber("");
-				setBuyerName("");
-				setInvoiceDate(new Date().toISOString());
-				setShippingPrice(0);
-				setDiscountInput(0),
-					setItems([
-						{
-							productId: "",
-							sizePriceId: "",
-							quantity: 1,
-							discountAmount: 0,
-							price: 0,
-							total: 0,
-						},
-					]);
-			},
+			onReset: resetForm,
 		});
 	};
 
@@ -330,33 +307,40 @@ export default function CreateInvoicePage() {
 													Discount (Optional)
 												</Label>
 												<div className="grid grid-cols-2 gap-2">
-													<Input
-														type="number"
-														placeholder="%"
-														min={0}
-														max={100}
-														value={
-															item.discountMode === "percent"
-																? item.discountInput
-																: calculateDiscountPercent(item)
-														}
-														onChange={(e) =>
-															handleItemChange(index, "discountInput", e.target.value, "percent")
-														}
-													/>
-													<Input
-														type="number"
-														placeholder="Rp"
-														min={0}
-														value={
-															item.discountMode === "amount"
-																? item.discountInput
-																: item.discountAmount
-														}
-														onChange={(e) =>
-															handleItemChange(index, "discountInput", e.target.value, "amount")
-														}
-													/>
+													<div>
+														<Label className="text-xs text-gray-500">Percent (%)</Label>
+														<Input
+															type="number"
+															placeholder="%"
+															min={0}
+															max={100}
+															step="any"
+															value={
+																item.discountMode === "percent"
+																	? item.discountInput
+																	: calculateDiscountPercent(item)
+															}
+															onChange={(e) =>
+																handleItemChange(index, "discountInput", e.target.value, "percent")
+															}
+														/>
+													</div>
+													<div>
+														<Label className="text-xs text-gray-500">Amount (Rp)</Label>
+														<Input
+															type="number"
+															placeholder="Rp"
+															min={0}
+															value={
+																item.discountMode === "amount"
+																	? item.discountInput
+																	: item.discountAmount
+															}
+															onChange={(e) =>
+																handleItemChange(index, "discountInput", e.target.value, "amount")
+															}
+														/>
+													</div>
 												</div>
 											</div>
 
@@ -399,6 +383,7 @@ export default function CreateInvoicePage() {
 													type="number"
 													min={0}
 													max={100}
+													step="any"
 													value={
 														discountMode === "percent"
 															? discountInput

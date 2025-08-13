@@ -10,7 +10,7 @@ import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 import { cn, formatDateFilename, toTitleCase } from "@/lib/utils";
 
 const InvoicePreview = forwardRef(
-	({ invoice, invoiceItems, onReady, isDownloadVersion = false }, ref) => {
+	({ invoice, invoiceItems, onReady, onDataReady, isDownloadVersion = false }, ref) => {
 		const [products, setProducts] = useState([]);
 		const [sizes, setSizes] = useState([]);
 		const [items, setItems] = useState([]);
@@ -48,14 +48,26 @@ const InvoicePreview = forwardRef(
 
 				setItems(mappedItems);
 
-				onReady?.();
+				onDataReady?.(true);
+			} else {
+				onDataReady?.(false);
 			}
 		}, [invoiceItems, products, sizes]);
+
+		useEffect(() => {
+			if (!items.length) return;
+
+			const timer = setTimeout(() => {
+				onReady?.();
+			}, 0);
+
+			return () => clearTimeout(timer);
+		}, [items]);
 
 		const subtotal = items.reduce((acc, item) => acc + item.total, 0);
 		const discount = invoice.discount || 0;
 
-		const discountPercent = subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0;
+		const discountPercent = subtotal > 0 ? (discount / subtotal) * 100 : 0;
 
 		const TOTAL_GAP_ROWS = 10;
 		const gapRows = Math.max(0, TOTAL_GAP_ROWS - items.length);
@@ -89,8 +101,8 @@ const InvoicePreview = forwardRef(
 					className={cn(
 						"mx-auto border border-[#6D2315] font-sans text-sm text-gray-900 invoice-content",
 						isDownloadVersion
-							? "w-[880px] overflow-hidden p-3"
-							: "w-full md:w-[880px] overflow-x-auto p-4"
+							? "w-[920px] p-3 overflow-visible"
+							: "w-full md:w-[850px] overflow-x-auto p-4"
 					)}
 				>
 					<div
@@ -255,7 +267,7 @@ const InvoicePreview = forwardRef(
 										{invoice?.discount > 0 && (
 											<tr className="text-green-500">
 												<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
-													diskon ({discountPercent}%) :
+													diskon ({discountPercent.toFixed(2)}%) :
 												</td>
 												<td className="px-2.5 py-2 whitespace-nowrap">
 													-Rp{" "}

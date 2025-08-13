@@ -84,7 +84,6 @@ export default function DatePicker({ invoiceDate, setInvoiceDate }) {
 								if (date) {
 									setSelectedDate(date);
 
-									// Set ke jam 12 siang
 									const withNoon = new Date(date);
 									withNoon.setHours(12, 0, 0, 0);
 									setInvoiceDate(withNoon.toISOString());

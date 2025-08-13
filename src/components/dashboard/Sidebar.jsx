@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 const navItems = [
 	{ name: "Dashboard", href: "/dashboard" },

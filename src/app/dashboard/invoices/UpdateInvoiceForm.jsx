@@ -334,33 +334,40 @@ export default function UpdateInvoiceForm({ invoice }) {
 													Discount (Optional)
 												</Label>
 												<div className="grid grid-cols-2 gap-2">
-													<Input
-														type="number"
-														placeholder="%"
-														min={0}
-														max={100}
-														value={
-															item.discountMode === "percent"
-																? item.discountInput
-																: calculateDiscountPercent(item)
-														}
-														onChange={(e) =>
-															handleItemChange(index, "discountInput", e.target.value, "percent")
-														}
-													/>
-													<Input
-														type="number"
-														placeholder="Rp"
-														min={0}
-														value={
-															item.discountMode === "amount"
-																? item.discountInput
-																: item.discountAmount
-														}
-														onChange={(e) =>
-															handleItemChange(index, "discountInput", e.target.value, "amount")
-														}
-													/>
+													<div>
+														<Label className="text-xs text-gray-500">Percent (%)</Label>
+														<Input
+															type="number"
+															placeholder="%"
+															min={0}
+															max={100}
+															step="any"
+															value={
+																item.discountMode === "percent"
+																	? item.discountInput
+																	: calculateDiscountPercent(item)
+															}
+															onChange={(e) =>
+																handleItemChange(index, "discountInput", e.target.value, "percent")
+															}
+														/>
+													</div>
+													<div>
+														<Label className="text-xs text-gray-500">Amount (Rp)</Label>
+														<Input
+															type="number"
+															placeholder="Rp"
+															min={0}
+															value={
+																item.discountMode === "amount"
+																	? item.discountInput
+																	: item.discountAmount
+															}
+															onChange={(e) =>
+																handleItemChange(index, "discountInput", e.target.value, "amount")
+															}
+														/>
+													</div>
 												</div>
 											</div>
 
@@ -404,6 +411,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 													type="number"
 													min={0}
 													max={100}
+													step="any"
 													value={
 														discountMode === "percent"
 															? discountInput
