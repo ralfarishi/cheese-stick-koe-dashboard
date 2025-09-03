@@ -3,7 +3,9 @@
 import { useRef, useState } from "react";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 import InvoicePreview from "./InvoicePreview";
 
@@ -19,6 +21,8 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 	const [dataReady, setDataReady] = useState(false);
 	const [isInvoiceReady, setIsInvoiceReady] = useState(false);
 	const [isDownloading, setIsDownloading] = useState(false);
+
+	const [shippingType, setShippingType] = useState("");
 
 	const handleDownload = async () => {
 		if (isDownloading) {
@@ -57,10 +61,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 			<DialogHeader>
 				<DialogTitle className="sr-only">Preview Invoice</DialogTitle>
 			</DialogHeader>
-			<DialogContent
-				className="max-w-full w-auto max-h-[90vh] overflow-y-auto p-0 md:max-w-5xl"
-				style={{ margin: "auto" }}
-			>
+			<DialogContent className="w-full md:max-w-7xl max-h-[90vh] overflow-y-auto p-0 mx-auto">
 				<div
 					ref={hiddenRef}
 					className="absolute -left-[9999px] top-0 bg-white p-2"
@@ -75,17 +76,41 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 						invoiceItems={invoiceItems}
 						onDataReady={setDataReady}
 						oonReady={() => setIsInvoiceReady(true)}
+						shippingType={shippingType}
 						isDownloadVersion
 					/>
 				</div>
 
-				<div ref={invoiceRef} className="bg-white p-6">
-					<InvoicePreview
-						invoice={invoice}
-						invoiceItems={invoiceItems}
-						onDataReady={setDataReady}
-						onReady={() => setIsInvoiceReady(true)}
-					/>
+				<div className="flex flex-col md:flex-row gap-0">
+					{/* main content */}
+					<div ref={invoiceRef} className="bg-white p-6 flex-1">
+						<InvoicePreview
+							invoice={invoice}
+							invoiceItems={invoiceItems}
+							onDataReady={setDataReady}
+							shippingType={shippingType}
+							onReady={() => setIsInvoiceReady(true)}
+						/>
+					</div>
+
+					{/* sidebar */}
+					<div className="md:w-64 bg-white pt-5 flex flex-col items-center md:items-start text-center md:text-left">
+						<p className="mb-2 font-medium">Pilih Ongkir</p>
+						<RadioGroup
+							value={shippingType}
+							onValueChange={setShippingType}
+							className="flex flex-col gap-3"
+						>
+							{["", "sameday", "instan", "jne", "jnt"].map((value) => (
+								<div key={value} className="flex items-center space-x-2">
+									<RadioGroupItem value={value} id={value || "default"} />
+									<Label htmlFor={value || "default"} className="text-xs">
+										{value === "" ? "Default (tanpa opsi)" : value}
+									</Label>
+								</div>
+							))}
+						</RadioGroup>
+					</div>
 				</div>
 
 				{/* desktop view */}

@@ -10,7 +10,10 @@ import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 import { cn, formatDateFilename, toTitleCase } from "@/lib/utils";
 
 const InvoicePreview = forwardRef(
-	({ invoice, invoiceItems, onReady, onDataReady, isDownloadVersion = false }, ref) => {
+	(
+		{ invoice, invoiceItems, shippingType, onReady, onDataReady, isDownloadVersion = false },
+		ref
+	) => {
 		const [products, setProducts] = useState([]);
 		const [sizes, setSizes] = useState([]);
 		const [items, setItems] = useState([]);
@@ -99,10 +102,10 @@ const InvoicePreview = forwardRef(
 				<div
 					ref={ref}
 					className={cn(
-						"mx-auto border border-[#6D2315] font-sans text-sm text-gray-900 invoice-content",
+						"border border-[#6D2315] font-sans text-sm text-gray-900 invoice-content",
 						isDownloadVersion
-							? "w-[920px] p-3 overflow-visible"
-							: "w-full md:w-[850px] overflow-x-auto p-4"
+							? "w-[1040px] p-3 overflow-visible"
+							: "w-full md:w-[1040px] overflow-x-auto p-4"
 					)}
 				>
 					<div
@@ -158,7 +161,7 @@ const InvoicePreview = forwardRef(
 									QRIS a.n Cheese Stick Koe
 								</figcaption>
 
-								<div className="flex justify-center">
+								<div className="flex justify-center mt-5">
 									<div className="relative w-38 h-38">
 										<Image src="/qris.png" alt="Icon" fill className="object-contain" />
 									</div>
@@ -168,13 +171,13 @@ const InvoicePreview = forwardRef(
 							</figure>
 
 							{/* Thank You Text */}
-							<div className="text-center pt-4 font-bold text-xl text-[#6b1d1d] thanks-msg uppercase">
+							<div className="text-center pt-10 font-bold text-2xl text-[#6b1d1d] thanks-msg uppercase">
 								terima kasih
 							</div>
 						</div>
 
 						{/* RIGHT SECTION */}
-						<div className="md:w-2/3 w-full pl-4 space-y-6 mt-6 md:mt-0">
+						<div className="md:w-2/3 w-full pl-6 space-y-6 mt-6 md:mt-0">
 							<div className="text-center border-b border-[#6D2315] pb-2">
 								<h1 className="font-bold text-lg uppercase">invoice pembayaran</h1>
 								<div className="flex justify-between text-xs mt-1">
@@ -196,7 +199,7 @@ const InvoicePreview = forwardRef(
 									style={{
 										border: "1.5px solid #6D2315",
 										tableLayout: "auto",
-										width: isDownloadVersion ? "100%" : "auto",
+										width: "100%",
 									}}
 								>
 									<thead
@@ -249,13 +252,12 @@ const InvoicePreview = forwardRef(
 												<td></td>
 												<td></td>
 												<td></td>
-												<td></td>
 											</tr>
 										))}
 
 										{/* Subtotal */}
 										<tr style={{ borderTop: "1.5px solid #6D2315" }}>
-											<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
+											<td colSpan="5" className="px-2.5 py-2 text-right uppercase">
 												Sub Total :
 											</td>
 											<td className="px-2.5 py-2 whitespace-nowrap">
@@ -266,7 +268,7 @@ const InvoicePreview = forwardRef(
 										{/* Diskon */}
 										{invoice?.discount > 0 && (
 											<tr className="text-green-500">
-												<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
+												<td colSpan="5" className="px-2.5 py-2 text-right uppercase">
 													diskon ({discountPercent.toFixed(2)}%) :
 												</td>
 												<td className="px-2.5 py-2 whitespace-nowrap">
@@ -280,8 +282,8 @@ const InvoicePreview = forwardRef(
 
 										{/* Ongkir */}
 										<tr>
-											<td colSpan="5" className="px-2.5 py-2 text-right uppercase ">
-												ongkir :
+											<td colSpan="5" className="px-2.5 py-2 text-right uppercase">
+												{shippingType ? `ongkir (${shippingType}) :` : "ongkir :"}
 											</td>
 											<td className="px-2.5 py-2 whitespace-nowrap">
 												Rp {invoice?.shipping?.toLocaleString("id-ID")}
