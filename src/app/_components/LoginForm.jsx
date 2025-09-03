@@ -24,17 +24,19 @@ export default function LoginForm() {
 	const handleLogin = async (e) => {
 		e.preventDefault();
 		setError("");
-		setLoading(true);
 
-		const supabase = supabaseBrowser();
-		const { error } = await supabase.auth.signInWithPassword({ email, password });
+		try {
+			setLoading(true);
+			const supabase = supabaseBrowser();
+			const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-		setLoading(false);
+			if (error) throw error;
 
-		if (error) {
-			toast.error(error.message);
-		} else {
-			router.replace("/dashboard");
+			await router.replace("/dashboard");
+		} catch (err) {
+			toast.error(err.message);
+		} finally {
+			setLoading(false);
 		}
 	};
 
