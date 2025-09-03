@@ -189,7 +189,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
 							onClick={() => setCurrentPage(page)}
 							variant={page === currentPage ? "default" : "outline"}
 							size="sm"
-							className={page === currentPage ? "bg-[#6D2315] text-white" : ""}
+							className={page === currentPage ? "bg-[#6D2315] hover:bg-[#8d2e1c] text-white" : ""}
 						>
 							{page}
 						</Button>
