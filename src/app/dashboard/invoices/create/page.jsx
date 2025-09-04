@@ -257,7 +257,7 @@ export default function CreateInvoicePage() {
 											</div>
 
 											{/* Size & Qty */}
-											<div className="grid grid-cols-2 gap-2">
+											<div className="grid grid-cols-1 md:grid-cols-2 gap-2">
 												<div>
 													<Label className="text-sm text-gray-700 mb-1 block">Size</Label>
 													<SizeCombobox
@@ -271,12 +271,46 @@ export default function CreateInvoicePage() {
 												</div>
 												<div>
 													<Label className="text-sm text-gray-700 mb-1 block">Qty</Label>
-													<Input
-														type="number"
-														value={item.quantity}
-														onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-														required
-													/>
+													{/* desktop */}
+													<div className="hidden md:block">
+														<Input
+															type="number"
+															value={item.quantity}
+															onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+															required
+														/>
+													</div>
+
+													<div className="flex items-center gap-2 md:hidden">
+														<Input
+															type="number"
+															value={item.quantity}
+															onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+															className="w-15 text-center"
+														/>
+														<button
+															type="button"
+															className="w-15 px-2 py-1 border rounded bg-rose-500 text-white"
+															onClick={() =>
+																handleItemChange(
+																	index,
+																	"quantity",
+																	Math.max(1, Number(item.quantity) - 1)
+																)
+															}
+														>
+															-
+														</button>
+														<button
+															type="button"
+															className="w-15 px-2 py-1 border rounded bg-emerald-500 text-white"
+															onClick={() =>
+																handleItemChange(index, "quantity", Number(item.quantity) + 1)
+															}
+														>
+															+
+														</button>
+													</div>
 												</div>
 											</div>
 
