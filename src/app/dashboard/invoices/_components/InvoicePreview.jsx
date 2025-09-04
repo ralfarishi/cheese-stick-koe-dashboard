@@ -124,7 +124,7 @@ const InvoicePreview = forwardRef(
 								</div>
 							</div>
 
-							<h2 className="text-center font-bold text-[#6b1d1d] uppercase text-lg">
+							<h2 className="text-center font-bold text-[#6b1d1d] uppercase text-lg pb-7">
 								cheese stick koe
 							</h2>
 
@@ -171,7 +171,7 @@ const InvoicePreview = forwardRef(
 							</figure>
 
 							{/* Thank You Text */}
-							<div className="text-center pt-10 font-bold text-2xl text-[#6b1d1d] thanks-msg uppercase">
+							<div className="text-center pt-5 font-bold text-2xl text-[#6b1d1d] thanks-msg uppercase">
 								terima kasih
 							</div>
 						</div>

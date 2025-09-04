@@ -101,7 +101,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 							onValueChange={setShippingType}
 							className="flex flex-col gap-3"
 						>
-							{["", "sameday", "instan", "jne", "jnt"].map((value) => (
+							{["", "sameday", "instan", "jne", "j&t"].map((value) => (
 								<div key={value} className="flex items-center space-x-2">
 									<RadioGroupItem value={value} id={value || "default"} />
 									<Label htmlFor={value || "default"} className="text-xs">
