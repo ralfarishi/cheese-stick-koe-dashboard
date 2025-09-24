@@ -6,6 +6,7 @@ import LoginForm from "./_components/LoginForm";
 
 export default async function LoginPage() {
 	const supabase = await supabaseServer();
+
 	const {
 		data: { session },
 	} = await supabase.auth.getSession();

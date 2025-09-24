@@ -15,9 +15,14 @@ export async function middleware(req) {
 		return NextResponse.redirect(new URL("/dashboard", req.url));
 	}
 
+	// trying to access protected route
+	if (!session && pathname.startsWith("/dashboard")) {
+		return NextResponse.redirect(new URL("/", req.url));
+	}
+
 	return res;
 }
 
 export const config = {
-	matcher: ["/"],
+	matcher: ["/", "/dashboard/:path*"],
 };
