@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { redirect, unauthorized } from "next/navigation";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -15,12 +15,13 @@ export const metadata = {
 
 export default async function Dashboard() {
 	const supabase = await supabaseServer();
+
 	const {
 		data: { session },
 	} = await supabase.auth.getSession();
 
 	if (!session) {
-		redirect("/");
+		unauthorized();
 	}
 
 	// const user = session.user;

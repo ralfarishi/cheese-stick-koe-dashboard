@@ -2,8 +2,8 @@
 
 import { useRef } from "react";
 
-import SizePriceTable from "../Table";
-import AddSizeButton from "./AddSizeButton";
+import SizePriceTable from "./_components/Table";
+import AddSizeButton from "./_components/AddSizeButton";
 
 export default function SizePage() {
 	const tableRef = useRef();

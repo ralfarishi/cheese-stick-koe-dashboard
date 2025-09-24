@@ -4,36 +4,33 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
-import ProductDeleteModal from "./_components/ProductDeleteModal";
-import ProductEditModal from "./_components/ProductEditModal";
+import EditSizeModal from "./EditSizeModal";
+import DeleteSizeModal from "./DeleteSizeModal";
 
 import { ArrowUp, ArrowDown, Pencil, Trash2 } from "lucide-react";
 
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
+import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 
 const ITEMS_PER_PAGE = 10;
 
-const ProductTable = forwardRef(function ProductTable(props, ref) {
-	const [products, setProducts] = useState([]);
+const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
+	const [size, setSize] = useState([]);
 	const [sortOrder, setSortOrder] = useState("asc");
 
 	const [error, setError] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 
-	const [selectedProduct, setSelectedProduct] = useState(null);
+	const [selectedSize, setSelectedSize] = useState(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
-
-	const [searchQuery, setSearchQuery] = useState("");
 
 	if (error) return <p className="text-red-500">Failed to fetch data: {error}</p>;
 
 	const fetchData = async () => {
-		const { data, error } = await getAllProducts(sortOrder);
+		const { data, error } = await getAllSizePrice(sortOrder);
 		if (error) setError(error.message);
-		else setProducts(data);
+		else setSize(data);
 	};
 
 	useEffect(() => {
@@ -44,33 +41,15 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 		refetch: fetchData,
 	}));
 
-	const filteredData = products.filter((product) => {
-		const query = searchQuery.toLowerCase();
-		return product.name.toLowerCase().includes(query);
-	});
-
 	// pagination
-	const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-	const paginatedData = filteredData.slice(
+	const totalPages = Math.ceil(size.length / ITEMS_PER_PAGE);
+	const paginatedData = size.slice(
 		(currentPage - 1) * ITEMS_PER_PAGE,
 		currentPage * ITEMS_PER_PAGE
 	);
 
 	return (
 		<Card className="p-4 bg-[#fffaf0] border border-[#f4e3d3] shadow-sm">
-			{/* Search Field */}
-			<Input
-				type="text"
-				placeholder="Search product..."
-				value={searchQuery}
-				onChange={(e) => {
-					setSearchQuery(e.target.value);
-					setCurrentPage(1);
-				}}
-				className="mb-4 w-full sm:w-64 px-3 py-2 text-sm border border-[#6D2315] rounded-md focus:outline-none focus:ring-2 focus:ring-[#6D2315]"
-			/>
-
-			{/* Table */}
 			<div className="overflow-x-auto rounded-lg border border-[#fceee4]">
 				<table className="w-full text-sm">
 					<thead className="bg-[#fdf2e9] text-[#6D2315]">
@@ -79,11 +58,11 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 								className="px-4 py-2 text-left font-semibold cursor-pointer"
 								onClick={() => {
 									setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-									setCurrentPage(1);
+									setCurrentPage(1); // reset ke page 1 tiap kali sorting
 								}}
 							>
 								<div className="flex items-center gap-1">
-									Product Name
+									Size
 									{sortOrder === "asc" ? (
 										<ArrowUp className="w-4 h-4" />
 									) : (
@@ -91,28 +70,30 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 									)}
 								</div>
 							</th>
-							<th className="px-4 py-2 text-left font-semibold">Description</th>
+
+							<th className="px-4 py-2 text-left font-semibold">Price</th>
 							<th className="px-4 py-2 text-left font-semibold">Created At</th>
 							<th className="px-4 py-2 text-left font-semibold">Action</th>
 						</tr>
 					</thead>
-
 					<tbody>
-						{paginatedData.map((product) => (
+						{paginatedData.map((data) => (
 							<tr
-								key={product.id}
+								key={data.id}
 								className="border-t border-[#fceee4] hover:bg-[#fff3ec] transition-colors"
 							>
-								<td className="px-4 py-2 text-gray-800">{product.name}</td>
-								<td className="px-4 py-2 text-gray-600">{product.description || "-"}</td>
-								<td className="px-4 py-2 text-gray-500">
-									{new Date(product.createdAt).toLocaleString()}
+								<td className="px-4 py-2 text-gray-800">{data.size}</td>
+								<td className="px-4 py-2 text-gray-800">
+									Rp. {(data.price || 0).toLocaleString("id-ID")}
+								</td>
+								<td className="px-4 py-2 text-gray-800">
+									{new Date(data.createdAt).toLocaleString()}
 								</td>
 								<td className="px-4 py-2">
 									<div className="flex gap-2">
 										<Button
 											onClick={() => {
-												setSelectedProduct(product);
+												setSelectedSize(data);
 												setEditModalOpen(true);
 											}}
 											variant="ghost"
@@ -123,7 +104,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 										</Button>
 										<Button
 											onClick={() => {
-												setSelectedProduct(product);
+												setSelectedSize(data);
 												setDeleteModalOpen(true);
 											}}
 											variant="ghost"
@@ -158,28 +139,27 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
 				})}
 			</div>
 
-			{/* Modals */}
-			<ProductDeleteModal
-				open={deleteModalOpen}
-				onOpenChange={setDeleteModalOpen}
-				productId={selectedProduct?.id}
-				onSuccess={() => {
-					setProducts((prev) => prev.filter((p) => p.id !== selectedProduct?.id));
-					setSelectedProduct(null);
+			<EditSizeModal
+				open={editModalOpen}
+				onOpenChange={setEditModalOpen}
+				data={selectedSize}
+				onSuccess={(updatedSize) => {
+					setSize((prev) => prev.map((p) => (p.id === updatedSize.id ? updatedSize : p)));
+					setSelectedSize(null);
 				}}
 			/>
 
-			<ProductEditModal
-				open={editModalOpen}
-				onOpenChange={setEditModalOpen}
-				product={selectedProduct}
-				onSuccess={(updatedProduct) => {
-					setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
-					setSelectedProduct(null);
+			<DeleteSizeModal
+				open={deleteModalOpen}
+				onOpenChange={setDeleteModalOpen}
+				sizeId={selectedSize?.id}
+				onSuccess={() => {
+					setSize((prev) => prev.filter((p) => p.id !== selectedSize?.id));
+					setSelectedSize(null);
 				}}
 			/>
 		</Card>
 	);
 });
 
-export default ProductTable;
+export default SizePriceTable;

@@ -2,8 +2,8 @@
 
 import { useRef } from "react";
 
-import ProductModalButton from "./ProductModalButton";
-import ProductTable from "../ProductTable";
+import ProductModalButton from "./_components/ProductModalButton";
+import ProductTable from "./_components/ProductTable";
 
 export default function ProductPage() {
 	const tableRef = useRef();

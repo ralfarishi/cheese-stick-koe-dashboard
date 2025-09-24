@@ -3,8 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-
-import AddSizeModal from "../AddSizeModal";
+import AddSizeModal from "./AddSizeModal";
 
 export default function AddSizeButton({ onSizeAdded }) {
 	const [open, setOpen] = useState(false);

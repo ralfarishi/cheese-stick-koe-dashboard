@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
+import { Controller, useForm } from "react-hook-form";
+
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 import { Input } from "@/components/ui/input";
@@ -31,17 +33,26 @@ export default function CreateInvoicePage() {
 	const [products, setProducts] = useState([]);
 	const [sizes, setSizes] = useState([]);
 
-	const [buyerName, setBuyerName] = useState("");
 	const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString());
-	const [invoiceNumber, setInvoiceNumber] = useState("");
 
 	const [lastInvoiceNumber, setLastInvoiceNumber] = useState(null);
 
 	const [shippingPrice, setShippingPrice] = useState(0);
 
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+		reset,
+	} = useForm({
+		defaultValues: {
+			invoiceNumber: "",
+			buyerName: "",
+		},
+		mode: "onChange",
+	});
+
 	const resetForm = () => {
-		setInvoiceNumber("");
-		setBuyerName("");
 		setInvoiceDate(new Date().toISOString());
 		setShippingPrice(0);
 		setDiscountInput(0);
@@ -106,7 +117,7 @@ export default function CreateInvoicePage() {
 		fetchOptions();
 	}, []);
 
-	// Kalkulasi total per item dan subtotal
+	// calculate each item total and subtotal
 	const updateItemField = (item, field, value, mode = null) => {
 		if (field === "sizePriceId") {
 			const selectedSize = sizes.find((s) => s.id === value);
@@ -164,9 +175,7 @@ export default function CreateInvoicePage() {
 
 	const totalPrice = subtotal + (parseInt(shippingPrice) || 0) - discountAmount;
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-
+	const onSubmit = async (data) => {
 		if (!user) {
 			toast.error("User not log in");
 			return;
@@ -179,17 +188,29 @@ export default function CreateInvoicePage() {
 			return;
 		}
 
-		await submitInvoice({
-			invoiceNumber,
-			buyerName: buyerName.trim().toLowerCase(),
+		const res = await submitInvoice({
+			invoiceNumber: data.invoiceNumber,
+			buyerName: data.buyerName.trim().toLowerCase(),
 			invoiceDate,
 			shippingPrice,
 			discountAmount,
 			totalPrice,
 			items,
 			user,
-			onReset: resetForm,
 		});
+
+		if (res.error) {
+			toast.error(res.error);
+		} else {
+			toast.success(res.message);
+
+			reset({
+				invoiceNumber: "",
+				buyerName: "",
+			});
+
+			resetForm();
+		}
 	};
 
 	return (
@@ -212,26 +233,55 @@ export default function CreateInvoicePage() {
 					</CardHeader>
 
 					<CardContent>
-						<form onSubmit={handleSubmit} className="space-y-8">
+						<form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
 							{/* Basic Info */}
 							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 								<div>
 									<Label className="py-2 block text-sm text-gray-700">Invoice Number</Label>
-									<Input
-										value={invoiceNumber}
-										onChange={(e) => setInvoiceNumber(e.target.value)}
-										placeholder={`Nomor invoice terakhir: ${lastInvoiceNumber || "0000"}`}
-										required
+									<Controller
+										name="invoiceNumber"
+										control={control}
+										rules={{
+											required: "Invoice Number is required!",
+											pattern: {
+												value: /^\d{4}$/,
+												message: "Invoice Number must be exactly 4 digits (0-9)",
+											},
+										}}
+										render={({ field }) => (
+											<Input
+												{...field}
+												placeholder={`Nomor invoice terakhir: ${lastInvoiceNumber || "0000"}`}
+												maxLength={4}
+												required
+											/>
+										)}
 									/>
+									{errors.invoiceNumber && (
+										<p role="alert" className="text-sm text-red-500">
+											{errors.invoiceNumber.message}
+										</p>
+									)}
 								</div>
 								<div>
 									<Label className="py-2 block text-sm text-gray-700">Buyer Name</Label>
-									<Input
-										value={buyerName}
-										onChange={(e) => setBuyerName(e.target.value)}
-										placeholder="Nama pembeli"
-										required
+									<Controller
+										name="buyerName"
+										control={control}
+										rules={{
+											required: "Buyer Name is required!",
+											pattern: {
+												value: /^[A-Za-z\s]+$/,
+												message: "Buyer Name must contain only letters and spaces",
+											},
+										}}
+										render={({ field }) => <Input {...field} placeholder="Nama pembeli" required />}
 									/>
+									{errors.buyerName && (
+										<p role="alert" className="text-sm text-red-500">
+											{errors.buyerName.message}
+										</p>
+									)}
 								</div>
 								<div>
 									<Label className="py-2 block text-sm text-gray-700">Invoice Date</Label>
