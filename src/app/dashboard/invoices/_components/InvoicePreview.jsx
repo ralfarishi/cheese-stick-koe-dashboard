@@ -104,8 +104,8 @@ const InvoicePreview = forwardRef(
 					className={cn(
 						"border border-[#6D2315] font-sans text-sm text-gray-900 invoice-content",
 						isDownloadVersion
-							? "w-[1040px] p-3 overflow-visible"
-							: "w-full md:w-[1040px] overflow-x-auto p-4"
+							? "w-[1080px] p-3 overflow-visible"
+							: "w-full md:w-[1080px] overflow-x-auto p-4"
 					)}
 				>
 					<div

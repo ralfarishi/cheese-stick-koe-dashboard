@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabaseBrowser } from "@/lib/supabaseBrowser";
@@ -12,30 +12,51 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2Icon, LockIcon } from "lucide-react";
 
-export default function LoginForm() {
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [error, setError] = useState("");
+import { Controller, useForm } from "react-hook-form";
 
+export default function LoginForm() {
+	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 
-	const router = useRouter();
+	useEffect(() => {
+		// set loading state false when route change complete
+		const handleComplete = () => setLoading(false);
 
-	const handleLogin = async (e) => {
-		e.preventDefault();
-		setError("");
+		// Listen to route change events
+		router.events?.on("routeChangeComplete", handleComplete);
+		router.events?.on("routeChangeError", handleComplete);
 
+		return () => {
+			router.events?.off("routeChangeComplete", handleComplete);
+			router.events?.off("routeChangeError", handleComplete);
+		};
+	}, [router]);
+
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+	});
+
+	const onSubmit = async (data) => {
 		try {
 			setLoading(true);
 			const supabase = supabaseBrowser();
-			const { error } = await supabase.auth.signInWithPassword({ email, password });
+			const { error } = await supabase.auth.signInWithPassword({
+				email: data.email,
+				password: data.password,
+			});
 
 			if (error) throw error;
 
-			await router.replace("/dashboard");
+			await router.push("/dashboard");
 		} catch (err) {
 			toast.error(err.message);
-		} finally {
 			setLoading(false);
 		}
 	};
@@ -54,36 +75,52 @@ export default function LoginForm() {
 				</CardHeader>
 
 				<CardContent>
-					<form onSubmit={handleLogin} className="space-y-5">
+					<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 						<div className="space-y-1">
 							<label htmlFor="email" className="text-sm font-medium text-gray-700">
 								Email
 							</label>
-							<Input
-								id="email"
-								type="email"
-								placeholder="you@example.com"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								required
+							<Controller
+								name="email"
+								control={control}
+								rules={{ required: "Email is required!" }}
+								render={({ field }) => (
+									<Input
+										{...field}
+										id="email"
+										type="email"
+										placeholder="you@example.com"
+										required
+									/>
+								)}
 							/>
+							{errors.email && (
+								<p role="alert" className="text-sm text-red-500">
+									{errors.email.message}
+								</p>
+							)}
 						</div>
 
 						<div className="space-y-1">
 							<label htmlFor="password" className="text-sm font-medium text-gray-700">
 								Password
 							</label>
-							<Input
-								id="password"
-								type="password"
-								placeholder="••••••••"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								required
+							<Controller
+								name="password"
+								control={control}
+								rules={{ required: "Password is required!" }}
+								render={({ field }) => (
+									<Input {...field} id="password" type="password" placeholder="••••••••" required />
+								)}
 							/>
+							{errors.password && (
+								<p role="alert" className="text-sm text-red-500">
+									{errors.password.message}
+								</p>
+							)}
 						</div>
 
-						{error && <p className="text-sm text-red-500 text-center">{error}</p>}
+						{/* {error && <p className="text-sm text-red-500 text-center">{error}</p>} */}
 
 						<Button
 							type="submit"

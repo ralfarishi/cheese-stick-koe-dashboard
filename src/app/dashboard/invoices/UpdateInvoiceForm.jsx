@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
+import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import StatusCombobox from "./_components/StatusCombobox";
 
 import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
+import { updateInvoice } from "@/lib/actions/invoice/updateInvoice";
 
 import { calculateDiscountAmount, calculateDiscountPercent, getPageTitle } from "@/lib/utils";
 import { ChevronRight, Trash2 } from "lucide-react";
@@ -32,13 +33,10 @@ export const metadata = {
 
 export default function UpdateInvoiceForm({ invoice }) {
 	const router = useRouter();
-	const supabase = supabaseBrowser();
 
 	const [products, setProducts] = useState([]);
 	const [sizes, setSizes] = useState([]);
 
-	const [invoiceNumber, setInvoiceNumber] = useState(invoice.invoiceNumber || "");
-	const [buyerName, setBuyerName] = useState(invoice.buyerName || "");
 	const [invoiceDate, setInvoiceDate] = useState(invoice.invoiceDate?.split("T")[0] || "");
 	const [items, setItems] = useState([]);
 	const [shippingPrice, setShippingPrice] = useState(invoice.shipping || 0);
@@ -46,6 +44,18 @@ export default function UpdateInvoiceForm({ invoice }) {
 
 	const [discountMode, setDiscountMode] = useState("amount");
 	const [discountInput, setDiscountInput] = useState(0);
+
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		defaultValues: {
+			invoiceNumber: invoice.invoiceNumber || "",
+			buyerName: invoice.buyerName || "",
+		},
+		mode: "onChange",
+	});
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -89,9 +99,7 @@ export default function UpdateInvoiceForm({ invoice }) {
 		}
 	}, [invoice]);
 
-	const handleUpdate = async (e) => {
-		e.preventDefault();
-
+	const onUpdate = async (data) => {
 		const isInvalid = items.some((item) => !item.productId || !item.sizePriceId);
 
 		if (isInvalid) {
@@ -99,45 +107,27 @@ export default function UpdateInvoiceForm({ invoice }) {
 			return;
 		}
 
-		const { error } = await supabase
-			.from("Invoice")
-			.update({
-				invoiceNumber,
-				buyerName,
+		const result = await updateInvoice({
+			invoiceId: invoice.id,
+			invoiceData: {
+				invoiceNumber: data.invoiceNumber,
+				buyerName: data.buyerName.trim().toLowerCase(),
 				invoiceDate,
 				totalPrice,
 				discount: discountAmount,
 				shipping: parseInt(shippingPrice),
 				status,
-			})
-			.eq("id", invoice.id);
+			},
+			items,
+		});
 
-		if (error) {
-			toast.error("Failed to update invoice");
-			console.error(error);
-		} else {
-			await supabase.from("InvoiceItem").delete().eq("invoiceId", invoice.id);
-
-			const itemsToInsert = items.map((item) => ({
-				invoiceId: invoice.id,
-				productId: item.productId,
-				sizePriceId: item.sizePriceId,
-				quantity: item.quantity,
-				subtotal: item.quantity * (item.price || 0) - item.discountAmount,
-				discountAmount: item.discountAmount || 0,
-			}));
-
-			const { error: itemError } = await supabase.from("InvoiceItem").insert(itemsToInsert);
-
-			if (itemError) {
-				toast.error("Failed to update Invoice Item");
-				console.error(itemError);
-				return;
-			}
-
-			toast.success("Invoice has been updated!");
-			router.push("/dashboard/invoices");
+		if (!result.success) {
+			toast.error(result.error || "Failed to update invoice");
+			return;
 		}
+
+		toast.success("Invoice has been updated!");
+		router.push("/dashboard/invoices");
 	};
 
 	const handleItemChange = (index, field, value, mode = null) => {
@@ -237,24 +227,48 @@ export default function UpdateInvoiceForm({ invoice }) {
 					</CardHeader>
 
 					<CardContent>
-						<form onSubmit={handleUpdate} className="space-y-8">
+						<form onSubmit={handleSubmit(onUpdate)} className="space-y-8">
 							{/* Basic Info */}
 							<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 								<div>
 									<Label className="py-2 block text-sm text-gray-700">Invoice Number</Label>
-									<Input
-										value={invoiceNumber}
-										onChange={(e) => setInvoiceNumber(e.target.value)}
-										required
+									<Controller
+										name="invoiceNumber"
+										control={control}
+										rules={{
+											required: "Invoice Number is required!",
+											pattern: {
+												value: /^\d{4}$/,
+												message: "Invoice Number must be exactly 4 digits (0-9)",
+											},
+										}}
+										render={({ field }) => <Input {...field} maxLength={4} required />}
 									/>
+									{errors.invoiceNumber && (
+										<p role="alert" className="text-sm text-red-500">
+											{errors.invoiceNumber.message}
+										</p>
+									)}
 								</div>
 								<div>
 									<Label className="py-2 block text-sm text-gray-700">Buyer Name</Label>
-									<Input
-										value={buyerName}
-										onChange={(e) => setBuyerName(e.target.value)}
-										required
+									<Controller
+										name="buyerName"
+										control={control}
+										rules={{
+											required: "Buyer Name is required!",
+											pattern: {
+												value: /^[A-Za-z\s]+$/,
+												message: "Buyer Name must contain only letters and spaces",
+											},
+										}}
+										render={({ field }) => <Input {...field} placeholder="Nama pembeli" required />}
 									/>
+									{errors.buyerName && (
+										<p role="alert" className="text-sm text-red-500">
+											{errors.buyerName.message}
+										</p>
+									)}
 								</div>
 								<div>
 									<Label className="py-2 block text-sm text-gray-700">Invoice Date</Label>

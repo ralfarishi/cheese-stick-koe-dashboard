@@ -1,7 +1,6 @@
-"use client";
+"use server";
 
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
-import { toast } from "sonner";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export const submitInvoice = async ({
 	invoiceNumber,
@@ -12,34 +11,34 @@ export const submitInvoice = async ({
 	totalPrice,
 	items,
 	user,
-	onReset,
 }) => {
 	if (!user) {
-		toast.error("User not log in");
-		return;
+		return { error: "User is not login!" };
 	}
 
 	if (!invoiceNumber.trim() || !buyerName.trim() || items.length === 0) {
-		toast.error("Invoice number, buyer name, and at least one item are required!");
-		return;
+		return { error: "Invoice number, buyer name, and at least one item are required!" };
 	}
 
-	const supabase = supabaseBrowser();
+	const supabase = await supabaseServer();
 
-	// Cek duplikat nomor invoice
-	const { data: existing } = await supabase
-		.from("Invoice")
-		.select("id")
-		.eq("invoiceNumber", invoiceNumber)
-		.maybeSingle();
+	// validate number inputs
+	const shipping = Number.isNaN(parseInt(shippingPrice)) ? 0 : parseInt(shippingPrice);
+	const discount = Number.isNaN(parseInt(discountAmount)) ? 0 : parseInt(discountAmount);
+	const total = Number.isNaN(parseInt(totalPrice)) ? 0 : parseInt(totalPrice);
 
-	if (existing) {
-		toast.error("Invoice number already existed!");
-		return;
-	}
-
-	// Simpan invoice
 	try {
+		// is invoice number already exist?
+		const { data: existing, error: checkError } = await supabase
+			.from("Invoice")
+			.select("id")
+			.eq("invoiceNumber", invoiceNumber)
+			.maybeSingle();
+
+		if (checkError) throw checkError;
+		if (existing) return { error: "Invoice number already existed!" };
+
+		// insert invoice
 		const { data: invoice, error: invoiceError } = await supabase
 			.from("Invoice")
 			.insert([
@@ -47,9 +46,9 @@ export const submitInvoice = async ({
 					invoiceNumber,
 					buyerName,
 					invoiceDate: new Date(invoiceDate),
-					shipping: parseInt(shippingPrice) || 0,
-					discount: discountAmount,
-					totalPrice: totalPrice,
+					shipping,
+					discount,
+					totalPrice: total,
 					status: "pending",
 					userId: user.id,
 				},
@@ -57,10 +56,9 @@ export const submitInvoice = async ({
 			.select()
 			.single();
 
-		if (invoiceError || !invoice) {
-			throw new Error(invoiceError?.message || "Failed to insert invoice");
-		}
+		if (invoiceError || !invoice) throw invoiceError || new Error("Failed to insert invoice!");
 
+		// insert invoice items
 		const invoiceItems = items.map((item) => ({
 			invoiceId: invoice.id,
 			productId: item.productId,
@@ -72,15 +70,10 @@ export const submitInvoice = async ({
 
 		const { error: itemError } = await supabase.from("InvoiceItem").insert(invoiceItems);
 
-		if (itemError) {
-			throw new Error(itemError.message);
-		}
+		if (itemError) throw itemError;
 
-		toast.success("Invoice has been created");
-
-		if (onReset) onReset();
+		return { success: true, message: "Invoice has been created", invoice };
 	} catch (err) {
-		console.error("Submit invoice error:", err);
-		toast.error("Something went wrong while saving invoice");
+		return { error: "Something went wrong while saving invoice!" };
 	}
 };
