@@ -39,6 +39,8 @@ export default function CreateInvoicePage() {
 
 	const [shippingPrice, setShippingPrice] = useState(0);
 
+	const [isLoading, setIsLoading] = useState(false);
+
 	const {
 		control,
 		handleSubmit,
@@ -188,20 +190,20 @@ export default function CreateInvoicePage() {
 			return;
 		}
 
-		const res = await submitInvoice({
-			invoiceNumber: data.invoiceNumber,
-			buyerName: data.buyerName.trim().toLowerCase(),
-			invoiceDate,
-			shippingPrice,
-			discountAmount,
-			totalPrice,
-			items,
-			user,
-		});
+		setIsLoading(true);
 
-		if (res.error) {
-			toast.error(res.error);
-		} else {
+		try {
+			const res = await submitInvoice({
+				invoiceNumber: data.invoiceNumber,
+				buyerName: data.buyerName.trim().toLowerCase(),
+				invoiceDate,
+				shippingPrice,
+				discountAmount,
+				totalPrice,
+				items,
+				user,
+			});
+
 			toast.success(res.message);
 
 			reset({
@@ -210,6 +212,10 @@ export default function CreateInvoicePage() {
 			});
 
 			resetForm();
+		} catch (error) {
+			toast.error(res.error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -529,8 +535,12 @@ export default function CreateInvoicePage() {
 								</div>
 							</div>
 
-							<Button type="submit" className="w-full bg-[#6D2315] hover:bg-[#591c10] text-white">
-								Create Invoice
+							<Button
+								type="submit"
+								className="w-full bg-[#6D2315] hover:bg-[#591c10] text-white"
+								disabled={isLoading}
+							>
+								{isLoading ? "Creating..." : "Create Invoice"}
 							</Button>
 						</form>
 					</CardContent>

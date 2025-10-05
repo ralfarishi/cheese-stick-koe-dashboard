@@ -20,12 +20,12 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 
 	const [dataReady, setDataReady] = useState(false);
 	const [isInvoiceReady, setIsInvoiceReady] = useState(false);
-	const [isDownloading, setIsDownloading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
 	const [shippingType, setShippingType] = useState("");
 
 	const handleDownload = async () => {
-		if (isDownloading) {
+		if (isLoading) {
 			toast.error("Wait until download complete");
 			return;
 		}
@@ -35,7 +35,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 			return;
 		}
 
-		setIsDownloading(true);
+		setIsLoading(true);
 
 		try {
 			await document.fonts.ready;
@@ -52,7 +52,7 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 			console.error("Download failed:", error);
 			toast.error("Failed to export invoice");
 		} finally {
-			setTimeout(() => setIsDownloading(false), 3000);
+			setIsLoading(false);
 		}
 	};
 
@@ -115,15 +115,15 @@ export default function InvoiceDownloadModal({ open, onOpenChange, invoice, invo
 
 				{/* desktop view */}
 				<div className="hidden md:block sticky bottom-0 z-10 bg-white p-4 border-t border-gray-200 shadow-sm text-center">
-					<Button onClick={handleDownload} disabled={isDownloading}>
-						{isDownloading ? "Please wait ..." : "Download PNG"}
+					<Button onClick={handleDownload} disabled={isLoading}>
+						{isLoading ? "Please wait ..." : "Download PNG"}
 					</Button>
 				</div>
 
 				{/* mobile view */}
 				<div className="md:hidden sticky bottom-0 z-10 bg-white p-4 border-t border-gray-200">
-					<Button className="w-full" onClick={handleDownload} disabled={isDownloading}>
-						{isDownloading ? "Please wait ..." : "Download PNG"}
+					<Button className="w-full" onClick={handleDownload} disabled={isLoading}>
+						{isLoading ? "Please wait ..." : "Download PNG"}
 					</Button>
 				</div>
 			</DialogContent>
