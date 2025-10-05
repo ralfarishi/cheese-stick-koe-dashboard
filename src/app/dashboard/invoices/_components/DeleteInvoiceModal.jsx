@@ -37,11 +37,11 @@ export default function DeleteInvoiceModal({ open, onOpenChange, invoiceId, onSu
 			showCancel={false}
 		>
 			<p>Are you sure want to delete this invoice?</p>
-			<DialogFooter>
+			<DialogFooter className="flex flex-wrap items-center gap-2 md:flex-row">
 				<Button
 					variant="destructive"
 					onClick={handleDelete}
-					className={"bg-rose-600 hover:bg-red-600 w-24"}
+					className="bg-rose-600 hover:bg-red-600 w-24"
 				>
 					Delete
 				</Button>
