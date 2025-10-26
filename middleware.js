@@ -1,28 +1,27 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { updateSession } from "@/lib/actions/supabase/middleware";
 import { NextResponse } from "next/server";
 
-export async function middleware(req) {
-	const res = NextResponse.next();
-	const supabase = createMiddlewareClient({ req, res });
+export async function middleware(request) {
+  const { response, session } = await updateSession(request);
+  const { pathname } = request.nextUrl;
 
-	const {
-		data: { session },
-	} = await supabase.auth.getSession();
+  // Ff login success
+  // Redirect authenticated users from login page to dashboard
+  if (session && pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
-	const { pathname } = req.nextUrl;
+  // If not login
+  // Redirect unauthenticated users from dashboard to login
+  if (!session && pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
-	if (session && pathname === "/") {
-		return NextResponse.redirect(new URL("/dashboard", req.url));
-	}
-
-	// trying to access protected route
-	if (!session && pathname.startsWith("/dashboard")) {
-		return NextResponse.redirect(new URL("/", req.url));
-	}
-
-	return res;
+  return response;
 }
 
 export const config = {
-	matcher: ["/", "/dashboard/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
