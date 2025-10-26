@@ -1,48 +1,63 @@
 "use client";
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import ProductDeleteModal from "./ProductDeleteModal";
-import ProductEditModal from "./ProductEditModal";
+import DeleteInvoiceModal from "./DeleteInvoiceModal";
+import InvoiceDownloadModal from "./InvoiceDownloadModal";
+
+import { getAllInvoice } from "@/lib/actions/invoice/getAllInvoice";
+import { getInvoiceWithItems } from "@/lib/actions/invoice/getInvoiceWithItem";
+
+import {
+  formatInvoiceDateTime,
+  getStatusIcons,
+  getStatusVariant,
+  toTitleCase,
+} from "@/lib/utils";
 
 import {
   ArrowUp,
   ArrowDown,
   Pencil,
   Trash2,
+  Download,
   FileText,
-  Filter,
   Search,
+  Filter,
+  Zap,
 } from "lucide-react";
-
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
-import ProductModalButton from "./ProductModalButton";
+import Link from "next/link";
 
 const ITEMS_PER_PAGE = 10;
 
-const ProductTable = forwardRef(function ProductTable(props, ref) {
-  const [products, setProducts] = useState([]);
-  const [sortOrder, setSortOrder] = useState("asc");
+const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
+  const router = useRouter();
+
+  const [invoice, setInvoice] = useState([]);
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [invoiceItems, setInvoiceItems] = useState([]);
 
   if (error)
     return <p className="text-red-500">Failed to fetch data: {error}</p>;
 
   const fetchData = async () => {
-    const { data, error } = await getAllProducts(sortOrder);
+    const { data, error } = await getAllInvoice(sortOrder);
     if (error) setError(error.message);
-    else setProducts(data);
+    else setInvoice(data);
   };
 
   useEffect(() => {
@@ -53,9 +68,12 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
     refetch: fetchData,
   }));
 
-  const filteredData = products.filter((product) => {
+  const filteredData = invoice.filter((inv) => {
     const query = searchQuery.toLowerCase();
-    return product.name.toLowerCase().includes(query);
+    return (
+      inv.invoiceNumber.toLowerCase().includes(query) ||
+      inv.buyerName.toLowerCase().includes(query)
+    );
   });
 
   // pagination
@@ -65,6 +83,13 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
     currentPage * ITEMS_PER_PAGE,
   );
 
+  const handleDownload = async (invoiceId) => {
+    const { invoice, items } = await getInvoiceWithItems(invoiceId);
+    setSelectedInvoice(invoice);
+    setInvoiceItems(items);
+    setDownloadModalOpen(true);
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg border  border-gray-100 overflow-hidden">
       {/* Header Section */}
@@ -73,19 +98,20 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <FileText className="w-6 h-6 text-[#8B2E1F]" />
-              Product List
+              Invoice List
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Manage and track all your products
+              Manage and track all your invoices
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <ProductModalButton
-              onProductAdded={() => {
-                fetchData();
-              }}
-            />
+            <Link href="/dashboard/invoices/create">
+              <Button className="bg-white text-[#6D2315] hover:bg-[#6D2315] hover:text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105">
+                <Zap className="w-5 h-5" />
+                Create Invoice
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -97,7 +123,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search product..."
+              placeholder="Search by name or invoice number..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -127,7 +153,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
                   }}
                   className="flex items-center gap-1 hover:text-orange-200 transition-colors"
                 >
-                  Product Name
+                  Invoice Number
                   {sortOrder === "desc" ? (
                     <ArrowDown className="w-4 h-4" />
                   ) : (
@@ -136,11 +162,13 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
                 </button>
               </th>
               <th className="px-6 py-4 text-left text-sm font-bold">
-                Description
+                Customer
               </th>
               <th className="px-6 py-4 text-left text-sm font-bold">
-                Created At
+                Total Price
               </th>
+              <th className="px-6 py-4 text-left text-sm font-bold">Date</th>
+              <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
               <th className="px-6 py-4 text-center text-sm font-bold">
                 Actions
               </th>
@@ -155,44 +183,69 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
                 >
                   <td className="px-6 py-4">
                     <span className="font-semibold text-gray-900">
-                      {data.name}
+                      {data.invoiceNumber}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-gray-700 font-medium">
-                      {data.description || "-"}
+                      {toTitleCase(data.buyerName)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="font-mono font-semibold text-gray-900">
-                      {new Date(data.createdAt).toLocaleString()}
+                      Rp {(data.totalPrice || 0).toLocaleString("id-ID")}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-gray-600 text-sm">
+                      {formatInvoiceDateTime(data.invoiceDate, data.createdAt)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`text-xs font-semibold px-3 py-1.5 inline-flex items-center rounded-full ${getStatusVariant(
+                        data.status,
+                      )}`}
+                    >
+                      {getStatusIcons(data.status)}
+                      {toTitleCase(data.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         onClick={() => {
-                          setSelectedProduct(data);
-                          setEditModalOpen(true);
+                          router.push(
+                            `/dashboard/invoices/${data.invoiceNumber}`,
+                          );
                         }}
                         variant="ghost"
                         size="icon"
                         className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
-                        title="Edit Product"
+                        title="Edit Invoice"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         onClick={() => {
-                          setSelectedProduct(data);
+                          setSelectedInvoice(data);
                           setDeleteModalOpen(true);
                         }}
                         variant="ghost"
                         size="icon"
                         className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg"
-                        title="Delete Product"
+                        title="Delete Invoice"
                       >
                         <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDownload(data.id)}
+                        variant="ghost"
+                        size="icon"
+                        className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                        title="Download Invoice"
+                      >
+                        <Download className="h-4 w-4" />
                       </Button>
                     </div>
                   </td>
@@ -206,10 +259,10 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
                       <FileText className="w-8 h-8 text-gray-400" />
                     </div>
                     <p className="text-gray-500 font-medium">
-                      No product data available
+                      No invoice data available
                     </p>
                     <p className="text-sm text-gray-400">
-                      Create your first product to get started
+                      Create your first invoice to get started
                     </p>
                   </div>
                 </td>
@@ -225,7 +278,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
           <p className="text-sm text-gray-600">
             Showing{" "}
             <span className="font-semibold">{paginatedData.length}</span> of{" "}
-            <span className="font-semibold">{products.length}</span> products
+            <span className="font-semibold">{invoice.length}</span> invoices
           </p>
 
           <div className="flex gap-2">
@@ -251,32 +304,26 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
         </div>
       </div>
 
-      {/* Modals */}
-      <ProductDeleteModal
+      <DeleteInvoiceModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        productId={selectedProduct?.id}
+        invoiceId={selectedInvoice?.id}
         onSuccess={() => {
-          setProducts((prev) =>
-            prev.filter((p) => p.id !== selectedProduct?.id),
+          setInvoice((prev) =>
+            prev.filter((p) => p.id !== selectedInvoice?.id),
           );
-          setSelectedProduct(null);
+          setSelectedInvoice(null);
         }}
       />
 
-      <ProductEditModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        product={selectedProduct}
-        onSuccess={(updatedProduct) => {
-          setProducts((prev) =>
-            prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
-          );
-          setSelectedProduct(null);
-        }}
+      <InvoiceDownloadModal
+        open={downloadModalOpen}
+        onOpenChange={setDownloadModalOpen}
+        invoice={selectedInvoice}
+        invoiceItems={invoiceItems}
       />
     </div>
   );
 });
 
-export default ProductTable;
+export default InvoicesTable;

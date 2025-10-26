@@ -9,8 +9,8 @@ export const metadata = {
 	title: getPageTitle("Size"),
 };
 
-export default function page() {
-	const session = verifySession();
+export default async function page() {
+	const session = await verifySession();
 
 	if (!session) {
 		unauthorized();

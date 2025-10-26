@@ -1,21 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import { Controller, useForm } from "react-hook-form";
 
-import { supabaseBrowser } from "@/lib/actions/supabase/browser";
-
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import DatePicker from "@/components/dashboard/DatePicker";
 
-import ProductCombobox from "./_components/ProductsCombobox";
-import SizeCombobox from "./_components/SizeCombobox";
+import ProductCombobox from "../create/_components/ProductsCombobox";
+import SizeCombobox from "../create/_components/SizeCombobox";
+import StatusCombobox from "./StatusCombobox";
+
+import { getAllProducts } from "@/lib/actions/products/getAllProducts";
+import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
+import { updateInvoice } from "@/lib/actions/invoice/updateInvoice";
+
+import {
+  calculateDiscountAmount,
+  calculateDiscountPercent,
+  getPageTitle,
+} from "@/lib/utils";
 
 import {
   Calendar,
@@ -28,109 +38,122 @@ import {
   Tag,
   Trash2,
   User,
+  CircleDot,
 } from "lucide-react";
+
 import { toast } from "sonner";
 
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
-import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
-import { submitInvoice } from "@/lib/actions/invoice/submitInvoice";
-import { calculateDiscountAmount, calculateDiscountPercent } from "@/lib/utils";
+export const metadata = {
+  title: getPageTitle("Invoice Edit"),
+};
 
-export default function CreateInvoicePage() {
-  const supabase = supabaseBrowser();
-  const [user, setUser] = useState(null);
+export default function UpdateInvoiceForm({ invoice }) {
+  const router = useRouter();
 
   const [products, setProducts] = useState([]);
   const [sizes, setSizes] = useState([]);
 
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString());
+  const [invoiceDate, setInvoiceDate] = useState(
+    invoice.invoiceDate?.split("T")[0] || "",
+  );
+  const [items, setItems] = useState([]);
+  const [shippingPrice, setShippingPrice] = useState(invoice.shipping || 0);
+  const [status, setStatus] = useState(invoice.status || "pending");
 
-  const [lastInvoiceNumber, setLastInvoiceNumber] = useState(null);
-
-  const [shippingPrice, setShippingPrice] = useState(0);
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [discountMode, setDiscountMode] = useState("amount");
+  const [discountInput, setDiscountInput] = useState(0);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm({
     defaultValues: {
-      invoiceNumber: "",
-      buyerName: "",
+      invoiceNumber: invoice.invoiceNumber || "",
+      buyerName: invoice.buyerName || "",
     },
     mode: "onChange",
   });
 
-  const resetForm = () => {
-    setInvoiceDate(new Date().toISOString());
-    setShippingPrice(0);
-    setDiscountInput(0);
-    setItems([createEmptyItem()]);
-  };
-
-  const createEmptyItem = () => ({
-    productId: "",
-    sizePriceId: "",
-    quantity: 1,
-    price: 0,
-    discountMode: "amount" | "percent",
-    discountInput: "",
-    discountAmount: 0,
-    total: 0,
-  });
-
-  const [items, setItems] = useState([createEmptyItem()]);
-
-  // general discount
-  const [discountMode, setDiscountMode] = useState("amount");
-  const [discountInput, setDiscountInput] = useState(0);
-
   useEffect(() => {
-    const fetchInitialData = async () => {
-      const [{ data: userData }, { data: lastInvoice }] = await Promise.all([
-        supabase.auth.getUser(),
-        supabase
-          .from("Invoice")
-          .select("invoiceNumber, invoiceDate")
-          .order("invoiceDate", { ascending: false })
-          .limit(1)
-          .single(),
-      ]);
+    const fetchData = async () => {
+      const { data: productsData } = await getAllProducts();
+      const { data: sizeData } = await getAllSizePrice();
 
-      if (userData?.user) setUser(userData.user);
-      if (lastInvoice) setLastInvoiceNumber(lastInvoice.invoiceNumber);
+      setProducts(productsData || []);
+      setSizes(sizeData || []);
     };
 
-    fetchInitialData();
+    fetchData();
   }, []);
-
-  const addItem = () => {
-    setItems([...items, createEmptyItem()]);
-  };
-
-  const removeItem = (index) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  };
 
   useEffect(() => {
-    const fetchOptions = async () => {
-      const [{ data: prods }, { data: szs }] = await Promise.all([
-        getAllProducts(),
-        getAllSizePrice(),
-      ]);
+    if (invoice?.items?.length) {
+      const mappedItems = invoice.items.map((item) => {
+        const quantity = item.quantity || 0;
+        const price = item.sizePrice?.price || 0;
+        const subtotal = quantity * price;
 
-      setProducts(prods || []);
-      setSizes(szs || []);
-    };
+        const discountAmount = item.discountAmount || 0;
 
-    fetchOptions();
-  }, []);
+        return {
+          productId: item.productId,
+          sizePriceId: item.sizePriceId,
+          quantity,
+          price,
+          discountAmount,
+          discountInput: String(discountAmount),
+          discountMode: "amount",
+          total: subtotal - discountAmount,
+        };
+      });
 
-  // calculate each item total and subtotal
-  const updateItemField = (item, field, value, mode = null) => {
+      setItems(mappedItems);
+    }
+
+    if (invoice?.discount !== undefined) {
+      setDiscountInput(String(invoice.discount));
+      setDiscountMode("amount");
+    }
+  }, [invoice]);
+
+  const onUpdate = async (data) => {
+    const isInvalid = items.some(
+      (item) => !item.productId || !item.sizePriceId,
+    );
+
+    if (isInvalid) {
+      toast.error("You must add product and size before submitting!");
+      return;
+    }
+
+    const result = await updateInvoice({
+      invoiceId: invoice.id,
+      invoiceData: {
+        invoiceNumber: data.invoiceNumber,
+        buyerName: data.buyerName.trim().toLowerCase(),
+        invoiceDate,
+        totalPrice,
+        discount: discountAmount,
+        shipping: parseInt(shippingPrice),
+        status,
+      },
+      items,
+    });
+
+    if (!result.success) {
+      toast.error(result.error || "Failed to update invoice");
+      return;
+    }
+
+    toast.success("Invoice has been updated!");
+    router.push("/dashboard/invoices");
+  };
+
+  const handleItemChange = (index, field, value, mode = null) => {
+    const updatedItems = [...items];
+    const item = updatedItems[index];
+
     if (field === "sizePriceId") {
       const selectedSize = sizes.find((s) => s.id === value);
       item.sizePriceId = value;
@@ -152,6 +175,7 @@ export default function CreateInvoicePage() {
 
     const qty = item.quantity || 0;
     const price = item.price || 0;
+
     const rawTotal = qty * price;
 
     const discountAmount = calculateDiscountAmount({
@@ -163,13 +187,7 @@ export default function CreateInvoicePage() {
 
     item.discountAmount = discountAmount;
     item.total = rawTotal - discountAmount;
-  };
 
-  const handleItemChange = (index, field, value, mode = null) => {
-    const updatedItems = [...items];
-    const item = updatedItems[index];
-
-    updateItemField(item, field, value, mode);
     setItems(updatedItems);
   };
 
@@ -187,53 +205,26 @@ export default function CreateInvoicePage() {
 
   const totalPrice = subtotal + (parseInt(shippingPrice) || 0) - discountAmount;
 
-  const onSubmit = async (data) => {
-    if (!user) {
-      toast.error("User not log in");
-      return;
-    }
+  const addItem = () => {
+    setItems([
+      ...items,
+      {
+        productId: "",
+        sizePriceId: "",
+        price: 0,
+        quantity: 1,
+        discountAmount: 0,
+        discountInput: "0",
+        discountMode: "amount",
+        total: 0,
+      },
+    ]);
+  };
 
-    const isInvalid = items.some(
-      (item) => !item.productId || !item.sizePriceId,
-    );
-
-    if (isInvalid) {
-      toast.error("You must add product and size before submitting!");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const res = await submitInvoice({
-        invoiceNumber: data.invoiceNumber,
-        buyerName: data.buyerName.trim().toLowerCase(),
-        invoiceDate,
-        shippingPrice,
-        discountAmount,
-        totalPrice,
-        items,
-        user,
-      });
-
-      if (res.error) {
-        toast.error(res.error);
-        return;
-      }
-
-      toast.success(res.message);
-
-      reset({
-        invoiceNumber: "",
-        buyerName: "",
-      });
-
-      resetForm();
-    } catch (error) {
-      toast.error(res.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
+  const removeItem = (index) => {
+    const updated = [...items];
+    updated.splice(index, 1);
+    setItems(updated);
   };
 
   return (
@@ -252,7 +243,7 @@ export default function CreateInvoicePage() {
               </Link>
               <ChevronRight className="w-4 h-4 text-gray-400" />
               <span className="text-[#8B2E1F] font-semibold">
-                Create Invoice
+                Update Invoice
               </span>
             </nav>
           </div>
@@ -265,10 +256,10 @@ export default function CreateInvoicePage() {
               </div>
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold text-white">
-                  Create New Invoice
+                  Update Invoice
                 </h1>
                 <p className="text-white/80 text-sm mt-1">
-                  Fill in the details to generate a new invoice
+                  Update the details to modify the existing invoice
                 </p>
               </div>
             </div>
@@ -276,7 +267,7 @@ export default function CreateInvoicePage() {
         </div>
 
         <div className="space-y-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={handleSubmit(onUpdate)} className="space-y-8">
             {/* Basic Information Card */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
               <div className="bg-gradient-to-r from-gray-50 to-orange-50 px-6 py-4 border-b border-gray-200">
@@ -287,7 +278,7 @@ export default function CreateInvoicePage() {
               </div>
 
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* Invoice Number */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
@@ -320,9 +311,6 @@ export default function CreateInvoicePage() {
                         #
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Invoice terakhir: {`${lastInvoiceNumber || "0000"}`}
-                    </p>
                     {errors.invoiceNumber && (
                       <p role="alert" className="text-sm text-red-500">
                         {errors.invoiceNumber.message}
@@ -367,6 +355,19 @@ export default function CreateInvoicePage() {
                     <DatePicker
                       invoiceDate={invoiceDate}
                       setInvoiceDate={setInvoiceDate}
+                    />
+                  </div>
+
+                  {/* Status*/}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <CircleDot className="w-4 h-4 text-[#8B2E1F]" />
+                      Status
+                    </Label>
+                    <StatusCombobox
+                      value={status}
+                      onChange={setStatus}
+                      required
                     />
                   </div>
                 </div>
@@ -422,7 +423,7 @@ export default function CreateInvoicePage() {
                           <Label className="text-xs font-semibold text-gray-600 uppercase">
                             Product
                           </Label>
-                          <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm">
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm text-gray-500">
                             <ProductCombobox
                               products={products}
                               value={item.productId}
@@ -615,7 +616,7 @@ export default function CreateInvoicePage() {
                     className="w-full md:w-auto"
                   >
                     <Plus className="w-5 h-5" />
-                    Add Item
+                    Add Another Item
                   </Button>
                 </div>
               </div>
@@ -746,16 +747,8 @@ export default function CreateInvoicePage() {
               <Button
                 type="submit"
                 className="w-full md:w-auto md:min-w-[300px] py-4 text-lg"
-                disabled={isLoading}
               >
-                {isLoading ? (
-                  "Loading..."
-                ) : (
-                  <>
-                    <Receipt className="w-5 h-5" />
-                    Create Invoice
-                  </>
-                )}
+                Update
               </Button>
             </div>
           </form>

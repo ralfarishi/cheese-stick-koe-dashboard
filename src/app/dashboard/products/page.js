@@ -9,8 +9,8 @@ export const metadata = {
 	title: getPageTitle("Products"),
 };
 
-export default function Page() {
-	const session = verifySession();
+export default async function Page() {
+	const session = await verifySession();
 
 	if (!session) {
 		unauthorized();

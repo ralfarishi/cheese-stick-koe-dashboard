@@ -1,144 +1,194 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-
-import { supabaseBrowser } from "@/lib/supabaseBrowser";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-
-import { toast } from "sonner";
-import { Loader2Icon, LockIcon } from "lucide-react";
-
+import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+
+import { login } from "@/lib/actions/auth";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+import {
+  ChevronRight,
+  Eye,
+  EyeClosed,
+  LoaderCircle,
+  Lock,
+  Mail,
+  ShieldCheck,
+} from "lucide-react";
 
 export default function LoginForm() {
-	const router = useRouter();
-	const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-	useEffect(() => {
-		// set loading state false when route change complete
-		const handleComplete = () => setLoading(false);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-		// Listen to route change events
-		router.events?.on("routeChangeComplete", handleComplete);
-		router.events?.on("routeChangeError", handleComplete);
+  const onSubmit = async (data) => {
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append("email", data.email);
+      formData.append("password", data.password);
 
-		return () => {
-			router.events?.off("routeChangeComplete", handleComplete);
-			router.events?.off("routeChangeError", handleComplete);
-		};
-	}, [router]);
+      const result = await login(formData);
 
-	const {
-		control,
-		handleSubmit,
-		formState: { errors },
-	} = useForm({
-		defaultValues: {
-			email: "",
-			password: "",
-		},
-	});
+      if (result?.error) {
+        toast.error(result.error);
+      }
+      // Success will be auto-redirect via server action
+    });
+  };
 
-	const onSubmit = async (data) => {
-		try {
-			setLoading(true);
-			const supabase = supabaseBrowser();
-			const { error } = await supabase.auth.signInWithPassword({
-				email: data.email,
-				password: data.password,
-			});
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-orange-50 via-red-50 to-amber-50 relative overflow-hidden">
+      <div className="w-full max-w-md relative z-10">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#8B2E1F] to-[#A63825] rounded-2xl shadow-2xl mb-4 transform hover:rotate-6 transition-transform duration-300">
+            <ShieldCheck className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Cheese Stick Koe
+          </h1>
+          <p className="text-gray-500">Invoice Management System</p>
+        </div>
 
-			if (error) throw error;
+        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-gradient-to-r from-[#8B2E1F] to-[#A63825] px-8 py-6 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-3">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-1">
+              Welcome Back!
+            </h2>
+            <p className="text-white/80 text-sm">Please login to continue</p>
+          </div>
 
-			await router.push("/dashboard");
-		} catch (err) {
-			toast.error(err.message);
-			setLoading(false);
-		}
-	};
+          <div className="p-8">
+            <div className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                  >
+                    <Mail className="w-4 h-4 text-[#8B2E1F]" />
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Controller
+                      name="email"
+                      control={control}
+                      rules={{ required: "Email is required!" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          id="email"
+                          type="email"
+                          placeholder="you@example.com"
+                          className="pl-11"
+                          disabled={isPending}
+                          required
+                        />
+                      )}
+                    />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
 
-	return (
-		<div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#fef6f3] to-[#f1f5f9]">
-			<Card className="w-full max-w-md shadow-xl border border-gray-200">
-				<CardHeader className="text-center space-y-2">
-					<div className="flex justify-center">
-						<div className="w-14 h-14 rounded-full bg-[#6d2315] text-white flex items-center justify-center text-2xl font-bold">
-							<LockIcon />
-						</div>
-					</div>
-					<CardTitle className="text-2xl font-bold text-[#6d2315]">Welcome Back</CardTitle>
-					<p className="text-sm text-gray-500">Please login to your account</p>
-				</CardHeader>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
+                  >
+                    <Lock className="w-4 h-4 text-[#8B2E1F]" />
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Controller
+                      name="password"
+                      control={control}
+                      rules={{ required: "Password is required!" }}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className="pl-11 pr-11"
+                          disabled={isPending}
+                          required
+                        />
+                      )}
+                    />
 
-				<CardContent>
-					<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-						<div className="space-y-1">
-							<label htmlFor="email" className="text-sm font-medium text-gray-700">
-								Email
-							</label>
-							<Controller
-								name="email"
-								control={control}
-								rules={{ required: "Email is required!" }}
-								render={({ field }) => (
-									<Input
-										{...field}
-										id="email"
-										type="email"
-										placeholder="you@example.com"
-										required
-									/>
-								)}
-							/>
-							{errors.email && (
-								<p role="alert" className="text-sm text-red-500">
-									{errors.email.message}
-								</p>
-							)}
-						</div>
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeClosed className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-						<div className="space-y-1">
-							<label htmlFor="password" className="text-sm font-medium text-gray-700">
-								Password
-							</label>
-							<Controller
-								name="password"
-								control={control}
-								rules={{ required: "Password is required!" }}
-								render={({ field }) => (
-									<Input {...field} id="password" type="password" placeholder="••••••••" required />
-								)}
-							/>
-							{errors.password && (
-								<p role="alert" className="text-sm text-red-500">
-									{errors.password.message}
-								</p>
-							)}
-						</div>
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-gray-300 text-[#8B2E1F] focus:ring-[#8B2E1F]"
+                    />
+                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors">
+                      Remember me
+                    </span>
+                  </label>
+                </div>
 
-						{/* {error && <p className="text-sm text-red-500 text-center">{error}</p>} */}
+                <Button
+                  className={`w-full px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
+                    isPending
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-gradient-to-r from-[#8B2E1F] to-[#A63825] hover:from-[#6D2315] hover:to-[#8B2E1F] text-white shadow-lg hover:shadow-xl hover:scale-105"
+                  }`}
+                  type="submit"
+                  disabled={isPending}
+                  onClick={handleSubmit}
+                >
+                  {isPending ? (
+                    <>
+                      <LoaderCircle className="w-5 h-5 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    <>
+                      Login
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
 
-						<Button
-							type="submit"
-							className="w-full bg-[#6d2315] hover:bg-[#591c10]"
-							disabled={loading}
-						>
-							{loading ? (
-								<>
-									<Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-									Logging in...
-								</>
-							) : (
-								"Login"
-							)}
-						</Button>
-					</form>
-				</CardContent>
-			</Card>
-		</div>
-	);
+        <p className="text-center text-sm text-gray-500 mt-8">
+          © {new Date().getFullYear()} Cheese Stick Koe. All rights reserved.
+        </p>
+      </div>
+    </div>
+  );
 }
