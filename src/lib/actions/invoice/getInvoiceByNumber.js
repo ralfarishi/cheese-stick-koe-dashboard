@@ -1,12 +1,12 @@
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createClient } from "@/lib/actions/supabase/server";
 
 export const getInvoiceByNumber = async (invoiceNumber) => {
-	const supabase = await supabaseServer();
+  const supabase = await createClient();
 
-	const { data: invoice, error } = await supabase
-		.from("Invoice")
-		.select(
-			`
+  const { data: invoice, error } = await supabase
+    .from("Invoice")
+    .select(
+      `
 			*,
 			items:InvoiceItem(
 				id,
@@ -17,11 +17,11 @@ export const getInvoiceByNumber = async (invoiceNumber) => {
 				product:Product(id, name),
 				sizePrice:ProductSizePrice(id, price, size)
 			)
-		`
-		)
-		.eq("invoiceNumber", invoiceNumber)
-		.single();
+		`,
+    )
+    .eq("invoiceNumber", invoiceNumber)
+    .single();
 
-	if (error) return { error };
-	return { data: invoice };
+  if (error) return { error };
+  return { data: invoice };
 };

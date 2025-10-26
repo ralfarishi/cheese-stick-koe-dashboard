@@ -1,14 +1,14 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createClient } from "@/lib/actions/supabase/server";
 
 export async function getAllSizePrice(sortOrder = "asc") {
-	const supabase = await supabaseServer();
+  const supabase = await createClient();
 
-	const { data, error } = await supabase
-		.from("ProductSizePrice")
-		.select("id, size, price, createdAt")
-		.order("size", { ascending: sortOrder === "asc" });
+  const { data, error } = await supabase
+    .from("ProductSizePrice")
+    .select("id, size, price, createdAt")
+    .order("size", { ascending: sortOrder === "asc" });
 
-	return { data, error };
+  return { data, error };
 }

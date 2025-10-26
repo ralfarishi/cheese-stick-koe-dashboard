@@ -1,24 +1,27 @@
 "use server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createClient } from "@/lib/actions/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function updateProduct(id, { name, description }) {
-	const supabase = await supabaseServer();
+  const supabase = await createClient();
 
-	try {
-		const { error } = await supabase.from("Product").update({ name, description }).eq("id", id);
+  try {
+    const { error } = await supabase
+      .from("Product")
+      .update({ name, description })
+      .eq("id", id);
 
-		if (error) {
-			console.error("❌ Supabase delete error:", error);
-			return { success: false, message: "Failed to update product" };
-		}
+    if (error) {
+      console.error("❌ Supabase delete error:", error);
+      return { success: false, message: "Failed to update product" };
+    }
 
-		revalidatePath("/dashboard/products");
+    revalidatePath("/dashboard/products");
 
-		return { success: true };
-	} catch (err) {
-		console.log(err);
-		return { success: false, message: "Failed to update product" };
-	}
+    return { success: true };
+  } catch (err) {
+    console.log(err);
+    return { success: false, message: "Failed to update product" };
+  }
 }

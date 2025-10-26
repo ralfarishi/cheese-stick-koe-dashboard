@@ -1,10 +1,10 @@
-import { supabaseServer } from "@/lib/supabaseServer";
+import { createClient } from "@/lib/actions/supabase/server";
 
 export async function verifySession() {
-	const supabase = await supabaseServer();
-	const {
-		data: { session },
-	} = await supabase.auth.getSession();
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-	return session;
+  return session;
 }
