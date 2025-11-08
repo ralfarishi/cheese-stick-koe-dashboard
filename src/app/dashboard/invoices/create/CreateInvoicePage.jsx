@@ -397,19 +397,16 @@ export default function CreateInvoicePage() {
                       {/* Item Header */}
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-[#8B2E1F] to-[#A63825] rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                            {index + 1}
-                          </div>
-                          <span className="font-semibold text-gray-700">
+                          <div className="w-15 h-8 bg-[#A63825] rounded-lg flex items-center justify-center text-white font-bold text-sm">
                             Item {index + 1}
-                          </span>
+                          </div>
                         </div>
 
                         {items.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeItem(index)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-rose-50 rounded-lg text-rose-500 hover:text-rose-700"
+                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-2 hover:bg-rose-50 rounded-lg text-rose-500 hover:text-rose-700"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

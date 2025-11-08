@@ -161,7 +161,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-bold">
+              <th className="px-6 py-4 text-left text-sm font-bold ">
                 Customer
               </th>
               <th className="px-6 py-4 text-left text-sm font-bold">

@@ -203,7 +203,7 @@ const InvoicePreview = forwardRef(
                 <div
                   className="rounded-2xl p-5 border-2"
                   style={{
-                    backgroundColor: "#fff7ed",
+                    backgroundColor: "#fef3e8",
                     borderColor: "rgba(212, 105, 60, 0.2)",
                   }}
                 >
@@ -243,24 +243,17 @@ const InvoicePreview = forwardRef(
                     <div
                       className="rounded-xl p-4 border-l-4"
                       style={{
-                        background:
-                          "linear-gradient(to right, #eff6ff, #dbeafe)",
-                        borderColor: "#3b82f6",
+                        background: "#fef3e8",
+                        borderColor: "#d4693c",
                       }}
                     >
-                      <p
-                        className="font-bold text-xs mb-1"
-                        style={{ color: "#1e3a8a" }}
-                      >
+                      <p className="font-bold text-xs text-[#6b1d1d] mb-1">
                         BRI
                       </p>
                       <p className="text-sm text-gray-700 leading-relaxed">
                         Ermi Sayekti Endahwati
                         <br />
-                        <span
-                          className="font-mono font-semibold"
-                          style={{ color: "#1d4ed8" }}
-                        >
+                        <span className="font-mono font-extrabold">
                           0122-01-012734-53-8
                         </span>
                       </p>
@@ -268,24 +261,17 @@ const InvoicePreview = forwardRef(
                     <div
                       className="rounded-xl p-4 border-l-4"
                       style={{
-                        background:
-                          "linear-gradient(to right, #eef2ff, #e0e7ff)",
-                        borderColor: "#6366f1",
+                        background: "#fff5ed",
+                        borderColor: "#d4693c",
                       }}
                     >
-                      <p
-                        className="font-bold text-xs mb-1"
-                        style={{ color: "#312e81" }}
-                      >
+                      <p className="font-bold text-xs text-[#6b1d1d] mb-1">
                         BCA
                       </p>
                       <p className="text-sm text-gray-700 leading-relaxed">
                         Ermi Sayekti Endahwati
                         <br />
-                        <span
-                          className="font-mono font-semibold"
-                          style={{ color: "#4338ca" }}
-                        >
+                        <span className="font-mono font-extrabold">
                           524-5031-928
                         </span>
                       </p>
@@ -297,35 +283,20 @@ const InvoicePreview = forwardRef(
                 <div
                   className="rounded-2xl p-5 border-2"
                   style={{
-                    background:
-                      "linear-gradient(to bottom right, #faf5ff, #fce7f3)",
-                    borderColor: "#e9d5ff",
+                    background: "#fef3e8",
+                    borderColor: "rgba(212, 105, 60, 0.2)",
                   }}
                 >
-                  <p
-                    className="text-sm font-bold text-center mb-3 uppercase"
-                    style={{ color: "#581c87" }}
-                  >
+                  <p className="text-sm font-bold text-center text-[#6b1d1d] mb-3 uppercase">
                     QRIS a.n Cheese Stick Koe
                   </p>
-                  <div
-                    className="rounded-xl p-3"
-                    style={{ backgroundColor: "#ffffff" }}
-                  >
-                    <div
-                      className="relative w-full aspect-square max-w-[200px] mx-auto rounded-lg flex items-center justify-center"
-                      style={{
-                        background:
-                          "linear-gradient(to bottom right, #f3e8ff, #fce7f3)",
-                      }}
-                    >
-                      <Image
-                        src="/qris.png"
-                        width={145}
-                        height={145}
-                        alt="QRIS"
-                      />
-                    </div>
+                  <div className="relative w-full aspect-square max-w-[200px] mx-auto rounded-lg flex items-center justify-center">
+                    <Image
+                      src="/qris.png"
+                      width={155}
+                      height={155}
+                      alt="QRIS"
+                    />
                   </div>
                 </div>
 
@@ -348,9 +319,32 @@ const InvoicePreview = forwardRef(
               <div className="md:col-span-2 space-y-6">
                 {/* Items Table */}
                 <div
-                  className="rounded-2xl overflow-hidden border-2"
+                  className="rounded-2xl overflow-hidden border-2 relative"
                   style={{ backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}
                 >
+                  {/* Watermark Diagonal */}
+                  <div
+                    className="absolute flex items-center justify-center pointer-events-none z-10"
+                    style={{
+                      top: "-12%",
+                      left: 0,
+                      right: 0,
+                      bottom: "12%",
+                      overflow: "hidden",
+                      transform: "rotate(-38deg)",
+                    }}
+                  >
+                    <div
+                      className="text-5xl font-bold uppercase tracking-wider"
+                      style={{
+                        color: "rgba(139, 46, 31, 0.02)",
+                        textShadow: "0 0 20px rgba(255,255,255,0.5)",
+                      }}
+                    >
+                      Cheese Stick Koe
+                    </div>
+                  </div>
+
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead
