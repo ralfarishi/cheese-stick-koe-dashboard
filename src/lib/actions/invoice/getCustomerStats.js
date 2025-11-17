@@ -1,8 +1,9 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/actions/supabase/server";
 
-export async function getCustomerStats(year) {
+export const getCustomerStats = cache(async (year) => {
   const supabase = await createClient();
 
   const start = new Date(`${year}-01-01`);
@@ -43,4 +44,4 @@ export async function getCustomerStats(year) {
   });
 
   return monthlyCustomers;
-}
+});

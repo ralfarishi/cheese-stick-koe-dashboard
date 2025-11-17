@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { createClient } from "@/lib/actions/supabase/server";
 
-export const getInvoiceByNumber = async (invoiceNumber) => {
+export const getInvoiceByNumber = cache(async (invoiceNumber) => {
   const supabase = await createClient();
 
   const { data: invoice, error } = await supabase
@@ -24,4 +25,8 @@ export const getInvoiceByNumber = async (invoiceNumber) => {
 
   if (error) return { error };
   return { data: invoice };
+});
+
+export const preloadInvoice = (invoiceNumber) => {
+  void getInvoiceByNumber(invoiceNumber);
 };

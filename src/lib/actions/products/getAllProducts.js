@@ -1,8 +1,9 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/actions/supabase/server";
 
-export async function getAllProducts(sortOrder = "asc") {
+export const getAllProducts = cache(async (sortOrder = "asc") => {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -11,4 +12,4 @@ export async function getAllProducts(sortOrder = "asc") {
     .order("name", { ascending: sortOrder === "asc" });
 
   return { data, error };
-}
+});
