@@ -74,7 +74,7 @@ export function Sidebar() {
   return (
     <>
       <style jsx>{`
-        @keyframes fade-in {
+        @keyframes sidebar-fade-in {
           from {
             opacity: 0;
             transform: translateY(-10px);
@@ -85,8 +85,8 @@ export function Sidebar() {
           }
         }
 
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
+        .animate-sidebar-fade-in {
+          animation: sidebar-fade-in 0.3s ease-out;
         }
 
         .custom-scrollbar::-webkit-scrollbar {
@@ -205,7 +205,7 @@ export function Sidebar() {
 
                   {/* Children Items */}
                   {isExpanded && (
-                    <div className="ml-6 pl-4 border-l-2 border-orange-200 space-y-1 animate-fade-in">
+                    <div className="ml-6 pl-4 border-l-2 border-orange-200 space-y-1 animate-sidebar-fade-in">
                       {item.children.map((child) => {
                         const isChildActive = pathname === child.href;
                         return (

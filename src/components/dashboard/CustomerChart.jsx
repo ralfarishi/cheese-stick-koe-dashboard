@@ -72,6 +72,7 @@ const CustomTooltip = ({ active, payload }) => {
         </p>
         <p className="text-lg font-bold text-[#8B2E1F] flex items-center gap-2">
           <Users className="w-4 h-4" />
+          {payload[0].value} Customers
         </p>
       </div>
     );

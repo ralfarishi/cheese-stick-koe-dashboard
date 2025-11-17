@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,8 +17,6 @@ import ProductCombobox from "../create/_components/ProductsCombobox";
 import SizeCombobox from "../create/_components/SizeCombobox";
 import StatusCombobox from "./StatusCombobox";
 
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
-import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 import { updateInvoice } from "@/lib/actions/invoice/updateInvoice";
 
 import {
@@ -47,11 +45,17 @@ export const metadata = {
   title: getPageTitle("Invoice Edit"),
 };
 
-export default function UpdateInvoiceForm({ invoice }) {
+export default function UpdateInvoiceForm({
+  invoice,
+  productsData = [],
+  sizesData = [],
+}) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [updateStatus, setUpdateStatus] = useState(null); // 'loading' | 'success' | null
 
-  const [products, setProducts] = useState([]);
-  const [sizes, setSizes] = useState([]);
+  const [products] = useState(productsData);
+  const [sizes] = useState(sizesData);
 
   const [invoiceDate, setInvoiceDate] = useState(
     invoice.invoiceDate?.split("T")[0] || "",
@@ -74,18 +78,6 @@ export default function UpdateInvoiceForm({ invoice }) {
     },
     mode: "onChange",
   });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: productsData } = await getAllProducts();
-      const { data: sizeData } = await getAllSizePrice();
-
-      setProducts(productsData || []);
-      setSizes(sizeData || []);
-    };
-
-    fetchData();
-  }, []);
 
   useEffect(() => {
     if (invoice?.items?.length) {
@@ -127,27 +119,36 @@ export default function UpdateInvoiceForm({ invoice }) {
       return;
     }
 
-    const result = await updateInvoice({
-      invoiceId: invoice.id,
-      invoiceData: {
-        invoiceNumber: data.invoiceNumber,
-        buyerName: data.buyerName.trim().toLowerCase(),
-        invoiceDate,
-        totalPrice,
-        discount: discountAmount,
-        shipping: parseInt(shippingPrice),
-        status,
-      },
-      items,
+    setUpdateStatus("loading");
+
+    startTransition(async () => {
+      const result = await updateInvoice({
+        invoiceId: invoice.id,
+        invoiceData: {
+          invoiceNumber: data.invoiceNumber,
+          buyerName: data.buyerName.trim().toLowerCase(),
+          invoiceDate,
+          totalPrice,
+          discount: discountAmount,
+          shipping: parseInt(shippingPrice),
+          status,
+        },
+        items,
+      });
+
+      if (!result.success) {
+        setUpdateStatus(null);
+        toast.error(result.error || "Failed to update invoice");
+        return;
+      }
+
+      setUpdateStatus("success");
+
+      setTimeout(() => {
+        router.push("/dashboard/invoices");
+        router.refresh();
+      }, 1300);
     });
-
-    if (!result.success) {
-      toast.error(result.error || "Failed to update invoice");
-      return;
-    }
-
-    toast.success("Invoice has been updated!");
-    router.push("/dashboard/invoices");
   };
 
   const handleItemChange = (index, field, value, mode = null) => {
@@ -229,6 +230,96 @@ export default function UpdateInvoiceForm({ invoice }) {
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 px-4 py-8">
+      {(isPending || updateStatus) && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-10 flex flex-col items-center gap-6 shadow-2xl border border-gray-100 max-w-sm w-full">
+            {updateStatus === "loading" && (
+              <>
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-20 w-20 border-4 border-gray-200 border-t-[#8B2E1F]"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <svg
+                      className="w-8 h-8 text-[#8B2E1F] animate-pulse"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Updating Invoice
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Please wait while we save your changes...
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <span
+                    className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  ></span>
+                  <span
+                    className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  ></span>
+                  <span
+                    className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  ></span>
+                </div>
+              </>
+            )}
+
+            {updateStatus === "success" && (
+              <>
+                {/* Success State */}
+                <div className="relative">
+                  {/* Checkmark Circle Animation */}
+                  <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center animate-scale-in">
+                    <svg
+                      className="w-10 h-10 text-emerald-600 animate-check"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Success particles */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full border-4 border-emerald-400 animate-ping opacity-75"></div>
+                  </div>
+                </div>
+
+                <div className="text-center space-y-2">
+                  <h3 className="text-xl font-bold text-emerald-600 animate-fade-in">
+                    Successfully Updated!
+                  </h3>
+                  <p className="text-sm text-gray-500 animate-fade-in-delay">
+                    Redirecting to invoice list...
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8">
