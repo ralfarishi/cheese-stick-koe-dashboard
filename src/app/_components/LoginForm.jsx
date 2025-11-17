@@ -16,7 +16,6 @@ import {
   LoaderCircle,
   Lock,
   Mail,
-  ShieldCheck,
 } from "lucide-react";
 
 export default function LoginForm() {
@@ -35,9 +34,20 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (data) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      toast.error("Invalid email format");
+      return;
+    }
+
+    if (data.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
     startTransition(async () => {
       const formData = new FormData();
-      formData.append("email", data.email);
+      formData.append("email", data.email.trim().toLowerCase());
       formData.append("password", data.password);
 
       const result = await login(formData);
@@ -53,9 +63,6 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-orange-50 via-red-50 to-amber-50 relative overflow-hidden">
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#8B2E1F] to-[#A63825] rounded-2xl shadow-2xl mb-4 transform hover:rotate-6 transition-transform duration-300">
-            <ShieldCheck className="w-10 h-10 text-white" />
-          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Cheese Stick Koe
           </h1>

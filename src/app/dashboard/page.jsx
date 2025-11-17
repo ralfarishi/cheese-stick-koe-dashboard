@@ -37,31 +37,33 @@ export default async function Dashboard() {
   // const user = session.user;
 
   // get all invoices
-  const { data: invoices } = await supabase
-    .from("Invoice")
-    .select("*")
-    .order("invoiceDate", { ascending: false });
+  const [{ data: invoices }, { data: customers }, { count: totalProducts }] =
+    await Promise.all([
+      supabase
+        .from("Invoice")
+        .select("*")
+        .order("invoiceDate", { ascending: false }),
+      supabase.from("Invoice").select("buyerName"),
+      supabase.from("Product").select("*", { count: "exact", head: true }),
+    ]);
 
   // get total invoice
-  const totalInvoices = invoices.length;
+  const totalInvoices = invoices.length || 0;
 
   // get latest invoice data
-  const latestInvoices = invoices.slice(0, 5);
+  const latestInvoices = invoices.slice(0, 5) || [];
 
   // count paid invoices
-  const invoicesSuccess = invoices.filter(
-    (inv) => inv.status === "success",
-  ).length;
+  const invoicesSuccess =
+    invoices.filter((inv) => inv.status === "success").length || 0;
 
   // count unpaid invoices
-  const invoicesUnpaid = invoices.filter(
-    (inv) => inv.status === "pending",
-  ).length;
+  const invoicesUnpaid =
+    invoices.filter((inv) => inv.status === "pending").length || 0;
 
   // count total customers (unique)
-  const { data } = await supabase.from("Invoice").select("buyerName");
   const uniqueCustomers = new Set(
-    data.map((d) => d.buyerName.trim().toLowerCase()),
+    customers?.map((d) => d.buyerName.trim().toLowerCase()) || [],
   );
   const totalCustomers = uniqueCustomers.size;
 
@@ -69,11 +71,6 @@ export default async function Dashboard() {
     invoices
       ?.filter((inv) => inv.status === "success")
       .reduce((acc, curr) => acc + curr.totalPrice, 0) || 0;
-
-  // get total products
-  const { count: totalProducts } = await supabase
-    .from("Product")
-    .select("*", { count: "exact", head: true });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 p-6">

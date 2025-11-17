@@ -34,14 +34,19 @@ import Link from "next/link";
 
 const ITEMS_PER_PAGE = 10;
 
-const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
+const InvoicesTable = forwardRef(function InvoicesTable(
+  { initialData = [] },
+  ref,
+) {
   const router = useRouter();
 
-  const [invoice, setInvoice] = useState([]);
+  const [invoice, setInvoice] = useState(initialData);
   const [sortOrder, setSortOrder] = useState("desc");
 
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasInitialData] = useState(initialData.length > 0);
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -55,12 +60,23 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
     return <p className="text-red-500">Failed to fetch data: {error}</p>;
 
   const fetchData = async () => {
-    const { data, error } = await getAllInvoice(sortOrder);
-    if (error) setError(error.message);
-    else setInvoice(data);
+    setIsLoading(true);
+    try {
+      const { data, error } = await getAllInvoice(sortOrder);
+      if (error) setError(error.message);
+      else setInvoice(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
+    if (hasInitialData && sortOrder === "desc") {
+      return;
+    }
+
     fetchData();
   }, [sortOrder]);
 
@@ -90,8 +106,71 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
     setDownloadModalOpen(true);
   };
 
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <FileText className="w-16 h-16 mx-auto mb-2" />
+            <p className="font-semibold">Failed to fetch data</p>
+            <p className="text-sm text-gray-500">{error}</p>
+          </div>
+          <Button onClick={fetchData} className="mt-4">
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading && invoice.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B2E1F] border-t-transparent"></div>
+          <p className="text-gray-600 font-medium">Loading invoices...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg border  border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      {isLoading && invoice.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-3xl p-10 flex flex-col items-center gap-6 shadow-2xl border border-gray-100 max-w-sm w-full">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-20 w-20 border-4 border-gray-200 border-t-[#8B2E1F]"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-[#8B2E1F] animate-pulse" />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-bold text-gray-900">
+                Loading Invoices
+              </h3>
+              <p className="text-sm text-gray-500">
+                Please wait while we fetch your data...
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <span
+                className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              ></span>
+              <span
+                className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              ></span>
+              <span
+                className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              ></span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="bg-gradient-to-r from-gray-50 to-orange-50 px-6 py-5 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -140,9 +219,8 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[800px]">
           <thead className="bg-gradient-to-r from-[#8B2E1F] to-[#A63825] text-white">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-bold">
@@ -152,6 +230,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
                     setCurrentPage(1);
                   }}
                   className="flex items-center gap-1 hover:text-orange-200 transition-colors"
+                  disabled={isLoading}
                 >
                   Invoice Number
                   {sortOrder === "desc" ? (
@@ -161,7 +240,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
                   )}
                 </button>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-bold ">
+              <th className="px-6 py-4 text-left text-sm font-bold">
                 Customer
               </th>
               <th className="px-6 py-4 text-left text-sm font-bold">
@@ -176,7 +255,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {paginatedData && paginatedData.length > 0 ? (
-              paginatedData.map((data, index) => (
+              paginatedData.map((data) => (
                 <tr
                   key={data.id}
                   className="hover:bg-gradient-to-r hover:from-orange-50 hover:to-transparent transition-all duration-200 group"
@@ -259,10 +338,14 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
                       <FileText className="w-8 h-8 text-gray-400" />
                     </div>
                     <p className="text-gray-500 font-medium">
-                      No invoice data available
+                      {searchQuery
+                        ? "No invoices found"
+                        : "No invoice data available"}
                     </p>
                     <p className="text-sm text-gray-400">
-                      Create your first invoice to get started
+                      {searchQuery
+                        ? "Try different search terms"
+                        : "Create your first invoice to get started"}
                     </p>
                   </div>
                 </td>
@@ -273,37 +356,42 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
       </div>
 
       {/* Pagination */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <p className="text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold">{paginatedData.length}</span> of{" "}
-            <span className="font-semibold">{invoice.length}</span> invoices
-          </p>
+      {filteredData.length > 0 && (
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-gray-600">
+              Showing{" "}
+              <span className="font-semibold">{paginatedData.length}</span> of{" "}
+              <span className="font-semibold">{filteredData.length}</span>{" "}
+              invoices
+            </p>
 
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const page = idx + 1;
-              return (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  variant={page === currentPage ? "default" : "outline"}
-                  size="sm"
-                  className={`min-w-[40px] ${
-                    page === currentPage
-                      ? "shadow-lg"
-                      : "hover:border-[#8B2E1F] hover:text-[#8B2E1F]"
-                  }`}
-                >
-                  {page}
-                </Button>
-              );
-            })}
+            <div className="flex gap-2">
+              {totalPages > 1 &&
+                Array.from({ length: totalPages }).map((_, idx) => {
+                  const page = idx + 1;
+                  return (
+                    <Button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      variant={page === currentPage ? "default" : "outline"}
+                      size="sm"
+                      className={`min-w-[40px] ${
+                        page === currentPage
+                          ? "shadow-lg"
+                          : "hover:border-[#8B2E1F] hover:text-[#8B2E1F]"
+                      }`}
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
+      {/* Modals */}
       <DeleteInvoiceModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
@@ -313,6 +401,12 @@ const InvoicesTable = forwardRef(function InvoicesTable(props, ref) {
             prev.filter((p) => p.id !== selectedInvoice?.id),
           );
           setSelectedInvoice(null);
+          // Reset pagination if needed
+          const newLength = invoice.length - 1;
+          const newTotalPages = Math.ceil(newLength / ITEMS_PER_PAGE);
+          if (currentPage > newTotalPages && newTotalPages > 0) {
+            setCurrentPage(newTotalPages);
+          }
         }}
       />
 
