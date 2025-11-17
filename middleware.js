@@ -5,15 +5,18 @@ export async function middleware(request) {
   const { response, session } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
-  // Ff login success
+  const isLoginPage = pathname === "/";
+  const isDashboard = pathname.startsWith("/dashboard");
+
+  // If login success
   // Redirect authenticated users from login page to dashboard
-  if (session && pathname === "/") {
+  if (session && isLoginPage) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   // If not login
   // Redirect unauthenticated users from dashboard to login
-  if (!session && pathname.startsWith("/dashboard")) {
+  if (!session && isDashboard) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
