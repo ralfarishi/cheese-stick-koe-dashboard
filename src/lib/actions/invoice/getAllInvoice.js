@@ -3,15 +3,32 @@
 import { cache } from "react";
 import { createClient } from "@/lib/actions/supabase/server";
 
-export const getAllInvoice = cache(async (sortOrder = "asc") => {
-  const supabase = await createClient();
+export const getAllInvoice = cache(
+  async ({ page = 1, limit = 10, query = "", sortOrder = "desc" } = {}) => {
+    const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("Invoice")
-    .select(
-      "id, invoiceNumber, buyerName, totalPrice, invoiceDate, status, createdAt",
-    )
-    .order("invoiceNumber", { ascending: sortOrder === "asc" });
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-  return { data, error };
-});
+    let dbQuery = supabase
+      .from("Invoice")
+      .select(
+        "id, invoiceNumber, buyerName, totalPrice, invoiceDate, status, createdAt",
+        { count: "exact" },
+      )
+      .order("invoiceNumber", { ascending: sortOrder === "asc" })
+      .range(from, to);
+
+    if (query) {
+      dbQuery = dbQuery.or(
+        `invoiceNumber.ilike.%${query}%,buyerName.ilike.%${query}%`,
+      );
+    }
+
+    const { data, error, count } = await dbQuery;
+
+    const totalPages = count ? Math.ceil(count / limit) : 0;
+
+    return { data, error, count, totalPages };
+  },
+);

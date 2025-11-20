@@ -1,12 +1,18 @@
 "use client";
 
-import { useRef, memo } from "react";
-import InvoicesTable from "./InvoiceList";
+import { memo } from "react";
+import InvoiceList from "./InvoiceList";
 
-function InvoicePage({ initialData }) {
-  const tableRef = useRef();
-
-  return <InvoicesTable ref={tableRef} initialData={initialData} />;
+function InvoicePage({ invoices, totalPages, totalCount }) {
+  return (
+    <div className="p-6">
+      <InvoiceList
+        invoices={invoices}
+        totalPages={totalPages}
+        totalCount={totalCount}
+      />
+    </div>
+  );
 }
 
 export default memo(InvoicePage);

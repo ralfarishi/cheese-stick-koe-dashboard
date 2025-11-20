@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import EditSizeModal from "./EditSizeModal";
@@ -13,51 +12,45 @@ import {
   ArrowDown,
   Pencil,
   Trash2,
-  Search,
-  Filter,
   FileText,
 } from "lucide-react";
 
-import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 import AddSizeButton from "./AddSizeButton";
-import { Input } from "@/components/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-const ITEMS_PER_PAGE = 10;
-
-const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
-  const [size, setSize] = useState([]);
-  const [sortOrder, setSortOrder] = useState("asc");
-
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+const SizePriceTable = forwardRef(function SizePriceTable(
+  { data = [], totalPages = 0, totalCount = 0 },
+  ref,
+) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [selectedSize, setSelectedSize] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
-  if (error)
-    return <p className="text-red-500">Failed to fetch data: {error}</p>;
+  // Get current state from URL
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const sortOrder = searchParams.get("sortOrder")?.toString() || "asc";
 
-  const fetchData = async () => {
-    const { data, error } = await getAllSizePrice(sortOrder);
-    if (error) setError(error.message);
-    else setSize(data);
+  const handleSort = () => {
+    const params = new URLSearchParams(searchParams);
+    const newOrder = sortOrder === "asc" ? "desc" : "asc";
+    params.set("sortOrder", newOrder);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [sortOrder]);
+  const handlePageChange = (page) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", page.toString());
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   useImperativeHandle(ref, () => ({
-    refetch: fetchData,
+    refresh: () => router.refresh(),
   }));
-
-  // pagination
-  const totalPages = Math.ceil(size.length / ITEMS_PER_PAGE);
-  const paginatedData = size.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border  border-gray-100 overflow-hidden">
@@ -77,7 +70,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
           <div className="flex items-center gap-2">
             <AddSizeButton
               onProductAdded={() => {
-                fetchData();
+                router.refresh();
               }}
             />
           </div>
@@ -91,10 +84,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
             <tr>
               <th className="px-6 py-4 text-left text-sm font-bold">
                 <button
-                  onClick={() => {
-                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                    setCurrentPage(1);
-                  }}
+                  onClick={handleSort}
                   className="flex items-center gap-1 hover:text-orange-200 transition-colors"
                 >
                   Size
@@ -115,32 +105,32 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginatedData && paginatedData.length > 0 ? (
-              paginatedData.map((data, index) => (
+            {data && data.length > 0 ? (
+              data.map((item, index) => (
                 <tr
-                  key={data.id}
+                  key={item.id}
                   className="hover:bg-gradient-to-r hover:from-orange-50 hover:to-transparent transition-all duration-200 group"
                 >
                   <td className="px-6 py-4">
                     <span className="font-semibold text-gray-900">
-                      {data.size}
+                      {item.size}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-gray-700 font-medium">
-                      Rp. {(data.price || 0).toLocaleString("id-ID")}
+                      Rp. {(item.price || 0).toLocaleString("id-ID")}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="font-mono font-semibold text-gray-900">
-                      {new Date(data.createdAt).toLocaleString()}
+                      {new Date(item.createdAt).toLocaleString()}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-1">
                       <Button
                         onClick={() => {
-                          setSelectedSize(data);
+                          setSelectedSize(item);
                           setEditModalOpen(true);
                         }}
                         variant="ghost"
@@ -152,7 +142,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
                       </Button>
                       <Button
                         onClick={() => {
-                          setSelectedSize(data);
+                          setSelectedSize(item);
                           setDeleteModalOpen(true);
                         }}
                         variant="ghost"
@@ -188,36 +178,38 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
       </div>
 
       {/* Pagination */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <p className="text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold">{paginatedData.length}</span> of{" "}
-            <span className="font-semibold">{size.length}</span> data
-          </p>
+      {data.length > 0 && (
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-gray-600">
+              Showing{" "}
+              <span className="font-semibold">{data.length}</span> of{" "}
+              <span className="font-semibold">{totalCount}</span> data
+            </p>
 
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const page = idx + 1;
-              return (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  variant={page === currentPage ? "default" : "outline"}
-                  size="sm"
-                  className={`min-w-[40px] ${
-                    page === currentPage
-                      ? "shadow-lg"
-                      : "hover:border-[#8B2E1F] hover:text-[#8B2E1F]"
-                  }`}
-                >
-                  {page}
-                </Button>
-              );
-            })}
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1;
+                return (
+                  <Button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    variant={page === currentPage ? "default" : "outline"}
+                    size="sm"
+                    className={`min-w-[40px] ${
+                      page === currentPage
+                        ? "shadow-lg"
+                        : "hover:border-[#8B2E1F] hover:text-[#8B2E1F]"
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modals */}
       <DeleteSizeModal
@@ -225,7 +217,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
         onOpenChange={setDeleteModalOpen}
         sizeId={selectedSize?.id}
         onSuccess={() => {
-          setSize((prev) => prev.filter((p) => p.id !== selectedSize?.id));
+          router.refresh();
           setSelectedSize(null);
         }}
       />
@@ -235,9 +227,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(props, ref) {
         onOpenChange={setEditModalOpen}
         data={selectedSize}
         onSuccess={(updatedSize) => {
-          setSize((prev) =>
-            prev.map((p) => (p.id === updatedSize.id ? updatedSize : p)),
-          );
+          router.refresh();
           setSelectedSize(null);
         }}
       />

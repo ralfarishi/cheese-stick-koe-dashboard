@@ -2,8 +2,9 @@ import { unauthorized } from "next/navigation";
 
 import InvoicePage from "./_components/InvoicePage";
 import { createClient } from "@/lib/actions/supabase/server";
+import { getAllInvoice } from "@/lib/actions/invoice/getAllInvoice";
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({ searchParams }) {
   const supabase = await createClient();
 
   const {
@@ -14,16 +15,32 @@ export default async function InvoicesPage() {
     unauthorized();
   }
 
-  const { data: initialInvoices, error } = await supabase
-    .from("Invoice")
-    .select(
-      "id, invoiceNumber, buyerName, totalPrice, invoiceDate, status, createdAt",
-    )
-    .order("invoiceNumber", { ascending: false });
+  const params = await searchParams;
+  const page = Number(params?.page) || 1;
+  const query = params?.query || "";
+  const sortOrder = params?.sortOrder || "desc";
+
+  const {
+    data: invoices,
+    totalPages,
+    count,
+    error,
+  } = await getAllInvoice({
+    page,
+    limit: 10,
+    query,
+    sortOrder,
+  });
 
   if (error) {
     console.error("Error fetching invoices:", error);
   }
 
-  return <InvoicePage initialData={initialInvoices || []} />;
+  return (
+    <InvoicePage
+      invoices={invoices || []}
+      totalPages={totalPages || 0}
+      totalCount={count || 0}
+    />
+  );
 }

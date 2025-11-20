@@ -18,52 +18,63 @@ import {
   Search,
 } from "lucide-react";
 
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import ProductModalButton from "./ProductModalButton";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-const ITEMS_PER_PAGE = 10;
-
-const ProductTable = forwardRef(function ProductTable(props, ref) {
-  const [products, setProducts] = useState([]);
-  const [sortOrder, setSortOrder] = useState("asc");
-
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+const ProductTable = forwardRef(function ProductTable(
+  { products = [], totalPages = 0, totalCount = 0 },
+  ref,
+) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  // Get current state from URL
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const searchQuery = searchParams.get("query")?.toString() || "";
+  const sortOrder = searchParams.get("sortOrder")?.toString() || "asc";
 
-  if (error)
-    return <p className="text-red-500">Failed to fetch data: {error}</p>;
+  const [searchTerm, setSearchTerm] = useState(searchQuery);
 
-  const fetchData = async () => {
-    const { data, error } = await getAllProducts(sortOrder);
-    if (error) setError(error.message);
-    else setProducts(data);
+  // Debounced search update
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== searchQuery) {
+        const params = new URLSearchParams(searchParams);
+        if (searchTerm) {
+          params.set("query", searchTerm);
+        } else {
+          params.delete("query");
+        }
+        params.set("page", "1"); 
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, searchQuery, pathname, router, searchParams]);
+
+  const handleSort = () => {
+    const params = new URLSearchParams(searchParams);
+    const newOrder = sortOrder === "asc" ? "desc" : "asc";
+    params.set("sortOrder", newOrder);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [sortOrder]);
+  const handlePageChange = (page) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", page.toString());
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   useImperativeHandle(ref, () => ({
-    refetch: fetchData,
+    refresh: () => router.refresh(),
   }));
-
-  const filteredData = products.filter((product) => {
-    const query = searchQuery.toLowerCase();
-    return product.name.toLowerCase().includes(query);
-  });
-
-  // pagination
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border  border-gray-100 overflow-hidden">
@@ -83,7 +94,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
           <div className="flex items-center gap-2">
             <ProductModalButton
               onProductAdded={() => {
-                fetchData();
+                router.refresh();
               }}
             />
           </div>
@@ -98,11 +109,8 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
             <Input
               type="text"
               placeholder="Search product..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10"
             />
           </div>
@@ -121,10 +129,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
             <tr>
               <th className="px-6 py-4 text-left text-sm font-bold">
                 <button
-                  onClick={() => {
-                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                    setCurrentPage(1);
-                  }}
+                  onClick={handleSort}
                   className="flex items-center gap-1 hover:text-orange-200 transition-colors"
                 >
                   Product Name
@@ -147,8 +152,8 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginatedData && paginatedData.length > 0 ? (
-              paginatedData.map((data, index) => (
+            {products && products.length > 0 ? (
+              products.map((data, index) => (
                 <tr
                   key={data.id}
                   className="hover:bg-gradient-to-r hover:from-orange-50 hover:to-transparent transition-all duration-200 group"
@@ -220,36 +225,38 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
       </div>
 
       {/* Pagination */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <p className="text-sm text-gray-600">
-            Showing{" "}
-            <span className="font-semibold">{paginatedData.length}</span> of{" "}
-            <span className="font-semibold">{products.length}</span> products
-          </p>
+      {products.length > 0 && (
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <p className="text-sm text-gray-600">
+              Showing{" "}
+              <span className="font-semibold">{products.length}</span> of{" "}
+              <span className="font-semibold">{totalCount}</span> products
+            </p>
 
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const page = idx + 1;
-              return (
-                <Button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  variant={page === currentPage ? "default" : "outline"}
-                  size="sm"
-                  className={`min-w-[40px] ${
-                    page === currentPage
-                      ? "shadow-lg"
-                      : "hover:border-[#8B2E1F] hover:text-[#8B2E1F]"
-                  }`}
-                >
-                  {page}
-                </Button>
-              );
-            })}
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }).map((_, idx) => {
+                const page = idx + 1;
+                return (
+                  <Button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    variant={page === currentPage ? "default" : "outline"}
+                    size="sm"
+                    className={`min-w-[40px] ${
+                      page === currentPage
+                        ? "shadow-lg"
+                        : "hover:border-[#8B2E1F] hover:text-[#8B2E1F]"
+                    }`}
+                  >
+                    {page}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modals */}
       <ProductDeleteModal
@@ -257,9 +264,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
         onOpenChange={setDeleteModalOpen}
         productId={selectedProduct?.id}
         onSuccess={() => {
-          setProducts((prev) =>
-            prev.filter((p) => p.id !== selectedProduct?.id),
-          );
+          router.refresh();
           setSelectedProduct(null);
         }}
       />
@@ -269,9 +274,7 @@ const ProductTable = forwardRef(function ProductTable(props, ref) {
         onOpenChange={setEditModalOpen}
         product={selectedProduct}
         onSuccess={(updatedProduct) => {
-          setProducts((prev) =>
-            prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
-          );
+          router.refresh();
           setSelectedProduct(null);
         }}
       />

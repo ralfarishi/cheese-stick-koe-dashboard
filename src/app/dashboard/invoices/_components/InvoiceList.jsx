@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import DeleteInvoiceModal from "./DeleteInvoiceModal";
 import InvoiceDownloadModal from "./InvoiceDownloadModal";
 
-import { getAllInvoice } from "@/lib/actions/invoice/getAllInvoice";
 import { getInvoiceWithItems } from "@/lib/actions/invoice/getInvoiceWithItem";
 
 import {
@@ -32,72 +31,61 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const ITEMS_PER_PAGE = 10;
-
 const InvoicesTable = forwardRef(function InvoicesTable(
-  { initialData = [] },
+  { invoices = [], totalPages = 0, totalCount = 0 },
   ref,
 ) {
   const router = useRouter();
-
-  const [invoice, setInvoice] = useState(initialData);
-  const [sortOrder, setSortOrder] = useState("desc");
-
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasInitialData] = useState(initialData.length > 0);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [invoiceItems, setInvoiceItems] = useState([]);
 
-  if (error)
-    return <p className="text-red-500">Failed to fetch data: {error}</p>;
+  // Get current state from URL
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const searchQuery = searchParams.get("query")?.toString() || "";
+  const sortOrder = searchParams.get("sortOrder")?.toString() || "desc";
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await getAllInvoice(sortOrder);
-      if (error) setError(error.message);
-      else setInvoice(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+  const [searchTerm, setSearchTerm] = useState(searchQuery);
+
+  // Debounced search update
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== searchQuery) {
+        const params = new URLSearchParams(searchParams);
+        if (searchTerm) {
+          params.set("query", searchTerm);
+        } else {
+          params.delete("query");
+        }
+        params.set("page", "1"); 
+        router.replace(`${pathname}?${params.toString()}`);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, searchQuery, pathname, router, searchParams]);
+
+  const handleSort = () => {
+    const params = new URLSearchParams(searchParams);
+    const newOrder = sortOrder === "asc" ? "desc" : "asc";
+    params.set("sortOrder", newOrder);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
-  useEffect(() => {
-    if (hasInitialData && sortOrder === "desc") {
-      return;
-    }
-
-    fetchData();
-  }, [sortOrder]);
+  const handlePageChange = (page) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("page", page.toString());
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   useImperativeHandle(ref, () => ({
-    refetch: fetchData,
+    refresh: () => router.refresh(),
   }));
-
-  const filteredData = invoice.filter((inv) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      inv.invoiceNumber.toLowerCase().includes(query) ||
-      inv.buyerName.toLowerCase().includes(query)
-    );
-  });
-
-  // pagination
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
 
   const handleDownload = async (invoiceId) => {
     const { invoice, items } = await getInvoiceWithItems(invoiceId);
@@ -106,71 +94,8 @@ const InvoicesTable = forwardRef(function InvoicesTable(
     setDownloadModalOpen(true);
   };
 
-  if (error) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-        <div className="text-center">
-          <div className="text-red-500 mb-4">
-            <FileText className="w-16 h-16 mx-auto mb-2" />
-            <p className="font-semibold">Failed to fetch data</p>
-            <p className="text-sm text-gray-500">{error}</p>
-          </div>
-          <Button onClick={fetchData} className="mt-4">
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading && invoice.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#8B2E1F] border-t-transparent"></div>
-          <p className="text-gray-600 font-medium">Loading invoices...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      {isLoading && invoice.length > 0 && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white rounded-3xl p-10 flex flex-col items-center gap-6 shadow-2xl border border-gray-100 max-w-sm w-full">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-20 w-20 border-4 border-gray-200 border-t-[#8B2E1F]"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FileText className="w-8 h-8 text-[#8B2E1F] animate-pulse" />
-              </div>
-            </div>
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold text-gray-900">
-                Loading Invoices
-              </h3>
-              <p className="text-sm text-gray-500">
-                Please wait while we fetch your data...
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <span
-                className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              ></span>
-              <span
-                className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              ></span>
-              <span
-                className="w-2 h-2 bg-[#8B2E1F] rounded-full animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              ></span>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden relative">
       {/* Header Section */}
       <div className="bg-gradient-to-r from-gray-50 to-orange-50 px-6 py-5 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -203,11 +128,8 @@ const InvoicesTable = forwardRef(function InvoicesTable(
             <Input
               type="text"
               placeholder="Search by name or invoice number..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10"
             />
           </div>
@@ -225,12 +147,8 @@ const InvoicesTable = forwardRef(function InvoicesTable(
             <tr>
               <th className="px-6 py-4 text-left text-sm font-bold">
                 <button
-                  onClick={() => {
-                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-                    setCurrentPage(1);
-                  }}
+                  onClick={handleSort}
                   className="flex items-center gap-1 hover:text-orange-200 transition-colors"
-                  disabled={isLoading}
                 >
                   Invoice Number
                   {sortOrder === "desc" ? (
@@ -254,8 +172,8 @@ const InvoicesTable = forwardRef(function InvoicesTable(
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginatedData && paginatedData.length > 0 ? (
-              paginatedData.map((data) => (
+            {invoices && invoices.length > 0 ? (
+              invoices.map((data) => (
                 <tr
                   key={data.id}
                   className="hover:bg-gradient-to-r hover:from-orange-50 hover:to-transparent transition-all duration-200 group"
@@ -356,13 +274,13 @@ const InvoicesTable = forwardRef(function InvoicesTable(
       </div>
 
       {/* Pagination */}
-      {filteredData.length > 0 && (
+      {invoices.length > 0 && (
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <p className="text-sm text-gray-600">
               Showing{" "}
-              <span className="font-semibold">{paginatedData.length}</span> of{" "}
-              <span className="font-semibold">{filteredData.length}</span>{" "}
+              <span className="font-semibold">{invoices.length}</span> of{" "}
+              <span className="font-semibold">{totalCount}</span>{" "}
               invoices
             </p>
 
@@ -373,7 +291,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(
                   return (
                     <Button
                       key={page}
-                      onClick={() => setCurrentPage(page)}
+                      onClick={() => handlePageChange(page)}
                       variant={page === currentPage ? "default" : "outline"}
                       size="sm"
                       className={`min-w-[40px] ${
@@ -397,16 +315,9 @@ const InvoicesTable = forwardRef(function InvoicesTable(
         onOpenChange={setDeleteModalOpen}
         invoiceId={selectedInvoice?.id}
         onSuccess={() => {
-          setInvoice((prev) =>
-            prev.filter((p) => p.id !== selectedInvoice?.id),
-          );
+          // Refresh data after delete
+          router.refresh();
           setSelectedInvoice(null);
-          // Reset pagination if needed
-          const newLength = invoice.length - 1;
-          const newTotalPages = Math.ceil(newLength / ITEMS_PER_PAGE);
-          if (currentPage > newTotalPages && newTotalPages > 0) {
-            setCurrentPage(newTotalPages);
-          }
         }}
       />
 

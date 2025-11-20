@@ -9,7 +9,9 @@ export const metadata = {
   title: getPageTitle("Products"),
 };
 
-export default async function Page() {
+import { getAllProducts } from "@/lib/actions/products/getAllProducts";
+
+export default async function Page({ searchParams }) {
   const supabase = await createClient();
 
   const {
@@ -20,11 +22,27 @@ export default async function Page() {
     unauthorized();
   }
 
-  const { data: initialProducts } = await supabase
-    .from("Product")
-    .select("id, name, description, createdAt")
-    .order("name", { ascending: true })
-    .limit(10);
+  const params = await searchParams;
+  const page = Number(params?.page) || 1;
+  const query = params?.query || "";
+  const sortOrder = params?.sortOrder || "asc";
 
-  return <ProductPage initialData={initialProducts || []} />;
+  const {
+    data: initialProducts,
+    totalPages,
+    count,
+  } = await getAllProducts({
+    page,
+    limit: 10,
+    query,
+    sortOrder,
+  });
+
+  return (
+    <ProductPage
+      products={initialProducts || []}
+      totalPages={totalPages || 0}
+      totalCount={count || 0}
+    />
+  );
 }
