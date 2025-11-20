@@ -4,9 +4,26 @@ import { createClient } from "@/lib/actions/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
+import {
+  checkRateLimit,
+  recordFailedAttempt,
+  clearAttempts,
+  formatLockoutTime,
+} from "@/lib/rateLimit";
+
 export async function login(formData) {
   const email = formData.get("email");
   const password = formData.get("password");
+
+  // Rate limiting check
+  const rateLimitResult = checkRateLimit(email);
+  
+  if (!rateLimitResult.allowed) {
+    const lockoutTime = formatLockoutTime(rateLimitResult.resetTime);
+    return {
+      error: `Too many login attempts. Please try again in ${lockoutTime}.`,
+    };
+  }
 
   const supabase = await createClient();
 
@@ -16,8 +33,25 @@ export async function login(formData) {
   });
 
   if (error) {
-    return { error: error.message };
+    // Record failed attempt
+    recordFailedAttempt(email);
+    
+    // Get updated rate limit info
+    const updatedLimit = checkRateLimit(email);
+    
+    if (updatedLimit.remainingAttempts > 0) {
+      return {
+        error: `${error.message}`,
+      };
+    } else {
+      return {
+        error: "Too many failed attempts. Your account has been temporarily locked.",
+      };
+    }
   }
+
+  // Clear attempts on successful login
+  clearAttempts(email);
 
   revalidatePath("/", "layout");
   redirect("/dashboard");
