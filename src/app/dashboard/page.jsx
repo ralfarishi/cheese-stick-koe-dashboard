@@ -23,6 +23,8 @@ export const metadata = {
   title: getPageTitle("Dashboard"),
 };
 
+import { getCustomerStats } from "@/lib/actions/invoice/getCustomerStats";
+
 export default async function Dashboard() {
   const supabase = await createClient();
 
@@ -34,42 +36,45 @@ export default async function Dashboard() {
     unauthorized();
   }
 
-  // const user = session.user;
+  const currentYear = new Date().getFullYear();
 
-  // get all invoices
-  const [{ data: invoices }, { data: customers }, { count: totalProducts }] =
-    await Promise.all([
-      supabase
-        .from("Invoice")
-        .select("*")
-        .order("invoiceDate", { ascending: false }),
-      supabase.from("Invoice").select("buyerName"),
-      supabase.from("Product").select("*", { count: "exact", head: true }),
-    ]);
+  // Parallelize data fetching with optimized queries
+  const [
+    { data: latestInvoices },
+    { data: statsData },
+    { count: totalProducts },
+    customerStats,
+  ] = await Promise.all([
+    supabase
+      .from("Invoice")
+      .select("id, invoiceNumber, buyerName, totalPrice, status")
+      .order("invoiceDate", { ascending: false })
+      .limit(5),
 
-  // get total invoice
-  const totalInvoices = invoices.length || 0;
+    supabase.from("Invoice").select("status, totalPrice, buyerName"),
 
-  // get latest invoice data
-  const latestInvoices = invoices.slice(0, 5) || [];
+    supabase.from("Product").select("*", { count: "exact", head: true }),
 
-  // count paid invoices
+    getCustomerStats(currentYear),
+  ]);
+
+  const invoices = statsData || [];
+  const totalInvoices = invoices.length;
+
   const invoicesSuccess =
     invoices.filter((inv) => inv.status === "success").length || 0;
-
-  // count unpaid invoices
   const invoicesUnpaid =
     invoices.filter((inv) => inv.status === "pending").length || 0;
 
   // count total customers (unique)
   const uniqueCustomers = new Set(
-    customers?.map((d) => d.buyerName.trim().toLowerCase()) || [],
+    invoices.map((d) => d.buyerName.trim().toLowerCase())
   );
   const totalCustomers = uniqueCustomers.size;
 
   const totalAmount =
     invoices
-      ?.filter((inv) => inv.status === "success")
+      .filter((inv) => inv.status === "success")
       .reduce((acc, curr) => acc + curr.totalPrice, 0) || 0;
 
   return (
@@ -239,7 +244,7 @@ export default async function Dashboard() {
           </div>
         </div>
 
-        <CustomerChart />
+        <CustomerChart initialData={customerStats} />
 
         {/* Latest Invoices Section */}
         <div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100">

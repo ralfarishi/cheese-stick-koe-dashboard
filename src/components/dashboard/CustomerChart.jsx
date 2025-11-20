@@ -80,23 +80,26 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-export default function CustomerChart() {
+export default function CustomerChart({ initialData }) {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(initialData || []);
   const [loading, setLoading] = useState(false);
 
   const fetchData = async (year) => {
     setLoading(true);
     const stats = await getCustomerStats(year);
 
-    setTimeout(() => {
-      setData(stats);
-      setLoading(false);
-    }, 500);
+    // Removed artificial delay
+    setData(stats);
+    setLoading(false);
   };
 
   useEffect(() => {
+    if (selectedYear === currentYear && initialData) {
+        setData(initialData);
+        return;
+    }
     fetchData(selectedYear);
   }, [selectedYear]);
 
