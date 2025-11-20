@@ -31,17 +31,18 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
-import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 import { submitInvoice } from "@/lib/actions/invoice/submitInvoice";
 import { calculateDiscountAmount, calculateDiscountPercent } from "@/lib/utils";
 
-export default function CreateInvoicePage() {
+export default function CreateInvoicePage({
+  products: initialProducts,
+  sizes: initialSizes,
+}) {
   const supabase = supabaseBrowser();
   const [user, setUser] = useState(null);
 
-  const [products, setProducts] = useState([]);
-  const [sizes, setSizes] = useState([]);
+  const [products, setProducts] = useState(initialProducts || []);
+  const [sizes, setSizes] = useState(initialSizes || []);
 
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString());
 
@@ -115,19 +116,7 @@ export default function CreateInvoicePage() {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  useEffect(() => {
-    const fetchOptions = async () => {
-      const [{ data: prods }, { data: szs }] = await Promise.all([
-        getAllProducts(),
-        getAllSizePrice(),
-      ]);
 
-      setProducts(prods || []);
-      setSizes(szs || []);
-    };
-
-    fetchOptions();
-  }, []);
 
   // calculate each item total and subtotal
   const updateItemField = (item, field, value, mode = null) => {
