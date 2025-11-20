@@ -21,7 +21,7 @@ export async function deleteInvoice(invoiceId) {
 
     return { success: true };
   } catch (err) {
-    console.log(err);
+    console.error("Error deleting invoice:", err);
     return { success: false, message: "Failed to delete invoice" };
   }
 }

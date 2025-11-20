@@ -21,7 +21,7 @@ export async function deleteSize(sizeId) {
 
     return { success: true };
   } catch (err) {
-    console.log(err);
+    console.error("Error deleting size:", err);
     return { success: false, message: "Failed to delete size" };
   }
 }

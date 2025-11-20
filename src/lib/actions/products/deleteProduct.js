@@ -21,7 +21,7 @@ export async function deleteProduct(productId) {
 
     return { success: true };
   } catch (err) {
-    console.log(err);
+    console.error("Error deleting product:", err);
     return { success: false, message: "Failed to delete product" };
   }
 }

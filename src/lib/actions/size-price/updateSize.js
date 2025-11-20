@@ -21,7 +21,7 @@ export async function updateSize(id, { size, price }) {
 
     return { success: true };
   } catch (err) {
-    console.log(err);
+    console.error("Error updating size:", err);
     return { success: false, message: "Failed to update size" };
   }
 }

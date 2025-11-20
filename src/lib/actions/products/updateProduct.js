@@ -21,7 +21,7 @@ export async function updateProduct(id, { name, description }) {
 
     return { success: true };
   } catch (err) {
-    console.log(err);
+    console.error("Error updating product:", err);
     return { success: false, message: "Failed to update product" };
   }
 }
