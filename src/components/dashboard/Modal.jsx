@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Controller } from "react-hook-form";
 
 export default function Modal({
 	open,
@@ -49,15 +50,41 @@ export default function Modal({
 				{!children && fields.length > 0 && (
 					<form onSubmit={onSubmit} className="space-y-4 mt-4">
 						{fields.map((field) => (
-							<div className="space-y-1" key={field.label || field.placeholder || field.value}>
-								{field.label && <Label>{field.label}</Label>}
-								<Input
-									type={field.type || "text"}
-									placeholder={field.placeholder}
-									value={field.value}
-									onChange={field.onChange}
-									required={field.required}
-								/>
+							<div className="space-y-1" key={field.name || field.label || field.placeholder}>
+								{field.label && (
+									<Label className={field.error ? "text-red-500" : ""} htmlFor={field.name}>
+										{field.label}
+									</Label>
+								)}
+								{field.control ? (
+									<Controller
+										name={field.name}
+										control={field.control}
+										rules={field.rules}
+										render={({ field: { onChange, value, ref } }) => (
+											<Input
+												id={field.name}
+												type={field.type || "text"}
+												placeholder={field.placeholder}
+												value={value}
+												onChange={onChange}
+												ref={ref}
+												className={field.error ? "border-red-500 focus-visible:ring-red-500" : ""}
+											/>
+										)}
+									/>
+								) : (
+									<Input
+										type={field.type || "text"}
+										placeholder={field.placeholder}
+										value={field.value}
+										onChange={field.onChange}
+										required={field.required}
+									/>
+								)}
+								{field.error && (
+									<p className="text-xs text-red-500 font-medium mt-1">{field.error.message}</p>
+								)}
 							</div>
 						))}
 						<DialogFooter>
