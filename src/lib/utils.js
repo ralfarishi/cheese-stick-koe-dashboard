@@ -39,39 +39,29 @@ export function toTitleCase(str) {
 	);
 }
 
-export function formatInvoiceDateTime(dateStr, timeStr) {
-	const date = new Date(dateStr);
+export function formatDateTime(dateStr, timeStr = null) {
+	if (!dateStr) return "-";
 
-	let timeVal = timeStr;
-	// If it's a string and missing timezone info (no Z and no offset), treat as UTC
-	if (typeof timeStr === "string" && !timeStr.endsWith("Z") && !/[+-]\d{2}:?\d{2}/.test(timeStr)) {
-		// Check if it looks like an ISO string (has T or space)
-		if (timeStr.includes("T") || timeStr.includes(" ")) {
-			timeVal = timeStr + "Z";
+	let dateTimeStr = dateStr;
+
+	if (timeStr) {
+		// If it's already a full ISO string, just use it
+		if (dateStr.includes("T")) {
+			dateTimeStr = dateStr;
+		} else {
+			dateTimeStr = `${dateStr}T${timeStr}`;
 		}
 	}
 
-	const time = new Date(timeVal);
-
-	const day = date.getDate().toString().padStart(2, "0");
-	const month = (date.getMonth() + 1).toString().padStart(2, "0");
-	const year = date.getFullYear();
-
-	const hours = time.getHours().toString().padStart(2, "0");
-	const minutes = time.getMinutes().toString().padStart(2, "0");
-
-	return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
-export function formatDateTime(dateStr) {
-	if (!dateStr) return "-";
-
-	let timeVal = dateStr;
-	// If it's a string and missing timezone info (no Z and no offset), treat as UTC
-	if (typeof dateStr === "string" && !dateStr.endsWith("Z") && !/[+-]\d{2}:?\d{2}/.test(dateStr)) {
+	let timeVal = dateTimeStr;
+	if (
+		typeof dateTimeStr === "string" &&
+		!dateTimeStr.endsWith("Z") &&
+		!/[+-]\d{2}:?\d{2}/.test(dateTimeStr)
+	) {
 		// Check if it looks like an ISO string (has T or space)
-		if (dateStr.includes("T") || dateStr.includes(" ")) {
-			timeVal = dateStr + "Z";
+		if (dateTimeStr.includes("T") || dateTimeStr.includes(" ")) {
+			timeVal = dateTimeStr + "Z";
 		}
 	}
 
@@ -85,6 +75,10 @@ export function formatDateTime(dateStr) {
 	const minutes = date.getMinutes().toString().padStart(2, "0");
 
 	return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+export function formatInvoiceDateTime(dateStr, timeStr) {
+	return formatDateTime(dateStr, timeStr);
 }
 
 export function formatDateFilename(date) {
@@ -102,6 +96,10 @@ export function getPageTitle(subTitle) {
 	return `Cheese Stick Koe - ${subTitle}`;
 }
 
+function getRawTotal(quantity, price) {
+	return (quantity || 0) * (price || 0);
+}
+
 export function calculateDiscountPercent({
 	quantity,
 	price,
@@ -109,7 +107,7 @@ export function calculateDiscountPercent({
 	discountInput,
 	discountAmount,
 }) {
-	const rawTotal = (quantity || 0) * (price || 0);
+	const rawTotal = getRawTotal(quantity, price);
 
 	if (!rawTotal) return "0";
 
@@ -124,10 +122,27 @@ export function calculateDiscountPercent({
 }
 
 export function calculateDiscountAmount({ quantity, price, discountInput, discountMode }) {
-	const rawTotal = (quantity || 0) * (price || 0);
+	const rawTotal = getRawTotal(quantity, price);
 	if (discountMode === "percent") {
 		return Math.round(((parseFloat(discountInput) || 0) / 100) * rawTotal);
 	}
 	return parseInt(discountInput) || 0;
 }
 
+/**
+ * Format remaining time for user message
+ * @param {number} resetTime - Timestamp when lockout expires
+ * @returns {string}
+ */
+export function formatLockoutTime(resetTime) {
+	const now = Date.now();
+	const remainingMs = resetTime - now;
+	const minutes = Math.ceil(remainingMs / 60000);
+
+	if (minutes > 60) {
+		const hours = Math.floor(minutes / 60);
+		return `${hours} hour${hours > 1 ? "s" : ""}`;
+	}
+
+	return `${minutes} minute${minutes > 1 ? "s" : ""}`;
+}
