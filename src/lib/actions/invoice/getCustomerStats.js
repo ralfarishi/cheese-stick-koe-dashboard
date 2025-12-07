@@ -4,44 +4,30 @@ import { cache } from "react";
 import { createClient } from "@/lib/actions/supabase/server";
 
 export const getCustomerStats = cache(async (year) => {
-  const supabase = await createClient();
+	const supabase = await createClient();
 
-  const start = new Date(`${year}-01-01`);
-  const end = new Date(`${year + 1}-01-01`);
+	const { data, error } = await supabase.rpc("get_customer_stats", { year });
 
-  const { data, error } = await supabase
-    .from("Invoice")
-    .select("buyerName, invoiceDate")
-    .eq("status", "success")
-    .gte("invoiceDate", start.toISOString())
-    .lt("invoiceDate", end.toISOString());
+	if (error) {
+		return [];
+	}
 
-  if (error) {
-    console.error("❌ Error fetching data:", error);
-    return [];
-  }
+	// Initialize all months with 0
+	const monthlyCustomers = Array.from({ length: 12 }, (_, i) => {
+		const date = new Date(year, i, 1);
+		return {
+			month: date.toLocaleString("en", { month: "short" }),
+			totalCustomer: 0,
+		};
+	});
 
-  // Map month data (1-12)
-  const monthlyCustomers = Array.from({ length: 12 }, (_, i) => ({
-    month: new Date(0, i).toLocaleString("en", { month: "short" }),
-    totalCustomer: 0,
-  }));
+	// Merge data from DB
+	data.forEach((item) => {
+		const monthIndex = monthlyCustomers.findIndex((m) => m.month === item.month);
+		if (monthIndex !== -1) {
+			monthlyCustomers[monthIndex].totalCustomer = item.total_customer;
+		}
+	});
 
-  data.forEach((invoice) => {
-    const date = new Date(invoice.invoiceDate);
-    const monthIndex = date.getMonth();
-    const buyerKey = invoice.buyerName.trim().toLowerCase();
-
-    if (!monthlyCustomers[monthIndex].buyers)
-      monthlyCustomers[monthIndex].buyers = new Set();
-    monthlyCustomers[monthIndex].buyers.add(buyerKey);
-  });
-
-  // Count unique customers per month
-  monthlyCustomers.forEach((m) => {
-    m.totalCustomer = m.buyers ? m.buyers.size : 0;
-    delete m.buyers;
-  });
-
-  return monthlyCustomers;
+	return monthlyCustomers;
 });

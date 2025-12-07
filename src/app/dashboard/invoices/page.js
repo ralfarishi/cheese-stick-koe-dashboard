@@ -5,42 +5,39 @@ import { createClient } from "@/lib/actions/supabase/server";
 import { getAllInvoice } from "@/lib/actions/invoice/getAllInvoice";
 
 export default async function InvoicesPage({ searchParams }) {
-  const supabase = await createClient();
+	const supabase = await createClient();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+	const {
+		data: { session },
+	} = await supabase.auth.getSession();
 
-  if (!session) {
-    unauthorized();
-  }
+	if (!session) {
+		unauthorized();
+	}
 
-  const params = await searchParams;
-  const page = Number(params?.page) || 1;
-  const query = params?.query || "";
-  const sortOrder = params?.sortOrder || "desc";
+	const params = await searchParams;
+	const page = Number(params?.page) || 1;
+	const query = params?.query || "";
+	const sortOrder = params?.sortOrder || "desc";
 
-  const {
-    data: invoices,
-    totalPages,
-    count,
-    error,
-  } = await getAllInvoice({
-    page,
-    limit: 10,
-    query,
-    sortOrder,
-  });
+	const {
+		data: invoices,
+		totalPages,
+		count,
+		error,
+	} = await getAllInvoice({
+		page,
+		limit: 10,
+		query,
+		sortOrder,
+	});
 
-  if (error) {
-    console.error("Error fetching invoices:", error);
-  }
+	if (error) {
+		// Error handled silently - page shows empty state
+	}
 
-  return (
-    <InvoicePage
-      invoices={invoices || []}
-      totalPages={totalPages || 0}
-      totalCount={count || 0}
-    />
-  );
+	return (
+		<InvoicePage invoices={invoices || []} totalPages={totalPages || 0} totalCount={count || 0} />
+	);
 }
+

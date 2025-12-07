@@ -258,6 +258,7 @@ const ProductTable = forwardRef(function ProductTable(
 				open={deleteModalOpen}
 				onOpenChange={setDeleteModalOpen}
 				productId={selectedProduct?.id}
+				productName={selectedProduct?.name}
 				onSuccess={() => {
 					router.refresh();
 					setSelectedProduct(null);

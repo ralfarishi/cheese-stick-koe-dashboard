@@ -4,24 +4,32 @@ import { createClient } from "@/lib/actions/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function updateProduct(id, { name, description }) {
-  const supabase = await createClient();
+	const supabase = await createClient();
 
-  try {
-    const { error } = await supabase
-      .from("Product")
-      .update({ name, description })
-      .eq("id", id);
+	try {
+		// Check for duplicate name (excluding current product)
+		const { data: existingProduct } = await supabase
+			.from("Product")
+			.select("id")
+			.ilike("name", name)
+			.neq("id", id)
+			.single();
 
-    if (error) {
-      console.error("❌ Supabase delete error:", error);
-      return { success: false, message: "Failed to update product" };
-    }
+		if (existingProduct) {
+			return { success: false, message: "Product with this name already exists" };
+		}
 
-    revalidatePath("/dashboard/products");
+		const { error } = await supabase.from("Product").update({ name, description }).eq("id", id);
 
-    return { success: true };
-  } catch (err) {
-    console.error("Error updating product:", err);
-    return { success: false, message: "Failed to update product" };
-  }
+		if (error) {
+			return { success: false, message: "Failed to update product" };
+		}
+
+		revalidatePath("/dashboard/products");
+
+		return { success: true };
+	} catch (err) {
+		return { success: false, message: "Failed to update product" };
+	}
 }
+

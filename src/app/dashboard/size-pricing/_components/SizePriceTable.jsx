@@ -213,6 +213,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(
 				open={deleteModalOpen}
 				onOpenChange={setDeleteModalOpen}
 				sizeId={selectedSize?.id}
+				sizeName={selectedSize?.size}
 				onSuccess={() => {
 					router.refresh();
 					setSelectedSize(null);

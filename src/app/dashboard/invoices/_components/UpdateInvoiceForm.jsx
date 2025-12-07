@@ -50,6 +50,10 @@ export default function UpdateInvoiceForm({ invoice, productsData = [], sizesDat
 	const [sizes] = useState(sizesData);
 
 	const [invoiceDate, setInvoiceDate] = useState(invoice.invoiceDate?.split("T")[0] || "");
+	// Store the original time to preserve it during updates
+	const [invoiceTime, setInvoiceTime] = useState(
+		invoice.invoiceDate?.split("T")[1] || "00:00:00.000Z"
+	);
 	const [items, setItems] = useState([]);
 	const [shippingPrice, setShippingPrice] = useState(invoice.shipping || 0);
 	const [status, setStatus] = useState(invoice.status || "pending");
@@ -110,13 +114,17 @@ export default function UpdateInvoiceForm({ invoice, productsData = [], sizesDat
 
 		setUpdateStatus("loading");
 
+		// Combine date and time
+		const datePart = invoiceDate.includes("T") ? invoiceDate.split("T")[0] : invoiceDate;
+		const fullInvoiceDate = `${datePart}T${invoiceTime}`;
+
 		startTransition(async () => {
 			const result = await updateInvoice({
 				invoiceId: invoice.id,
 				invoiceData: {
 					invoiceNumber: data.invoiceNumber,
 					buyerName: data.buyerName.trim().toLowerCase(),
-					invoiceDate,
+					invoiceDate: fullInvoiceDate,
 					totalPrice,
 					discount: discountAmount,
 					shipping: parseInt(shippingPrice),

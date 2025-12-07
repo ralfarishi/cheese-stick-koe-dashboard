@@ -8,18 +8,16 @@ import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 
 export default async function Page() {
-  const session = await verifySession();
+	const session = await verifySession();
 
-  if (!session) {
-    unauthorized();
-  }
+	if (!session) {
+		unauthorized();
+	}
 
-  const [{ data: products }, { data: sizes }] = await Promise.all([
-    getAllProducts(),
-    getAllSizePrice(),
-  ]);
+	const [{ data: products }, { data: sizes }] = await Promise.all([
+		getAllProducts({ limit: 1000 }),
+		getAllSizePrice({ limit: 1000 }),
+	]);
 
-  return (
-    <CreateInvoicePage products={products || []} sizes={sizes || []} />
-  );
+	return <CreateInvoicePage products={products || []} sizes={sizes || []} />;
 }

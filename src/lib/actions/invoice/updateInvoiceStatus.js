@@ -3,21 +3,19 @@
 import { createClient } from "@/lib/actions/supabase/server";
 import { revalidatePath } from "next/cache";
 
-export async function deleteInvoice(invoiceId) {
+export async function updateInvoiceStatus(invoiceId, status) {
 	const supabase = await createClient();
 
 	try {
-		const { error } = await supabase.from("Invoice").delete().match({ id: invoiceId });
+		const { error } = await supabase.from("Invoice").update({ status }).eq("id", invoiceId);
 
 		if (error) {
-			return { success: false, message: "Failed to delete invoice" };
+			throw error;
 		}
 
 		revalidatePath("/dashboard/invoices");
-
 		return { success: true };
 	} catch (err) {
-		return { success: false, message: "Failed to delete invoice" };
+		return { success: false, error: err.message };
 	}
 }
-

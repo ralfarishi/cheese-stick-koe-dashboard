@@ -1,67 +1,56 @@
 "use client";
 
-import { DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-
-import Modal from "@/components/dashboard/Modal";
-
-import { deleteProduct } from "@/lib/actions/products/deleteProduct";
-
+import { useState } from "react";
 import { toast } from "sonner";
+import { deleteProduct } from "@/lib/actions/products/deleteProduct";
+import DeleteConfirmationModal from "@/components/dashboard/DeleteConfirmationModal";
 
-export default function ProductDeleteModal({ open, onOpenChange, productId, onSuccess }) {
+export default function ProductDeleteModal({
+	open,
+	onOpenChange,
+	productId,
+	productName,
+	onSuccess,
+}) {
+	const [isDeleting, setIsDeleting] = useState(false);
+
 	const handleDelete = async () => {
-		const result = await deleteProduct(productId);
+		if (!productId) {
+			toast.error("Product ID not found");
+			return;
+		}
 
-		if (result?.success) {
-			toast.success("Product has been deleted");
-			onSuccess?.();
-			onOpenChange(false);
-		} else {
-			toast.error(result?.message || "Failed to delete product");
+		setIsDeleting(true);
+		try {
+			const result = await deleteProduct(productId);
+
+			if (result?.success) {
+				toast.success("Product has been deleted");
+				onSuccess?.();
+				onOpenChange(false);
+			} else {
+				toast.error(result?.message || "Failed to delete product");
+			}
+		} catch (error) {
+			toast.error("An error occurred while deleting product");
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
 	return (
-		<Modal
+		<DeleteConfirmationModal
 			open={open}
 			onOpenChange={onOpenChange}
+			onConfirm={handleDelete}
+			isDeleting={isDeleting}
 			title="Delete Product"
-			color="red"
-			submitLabel="Delete"
-			showCancel={false}
-		>
-			<p>Are you sure want to delete this product?</p>
-			<DialogFooter>
-				<Button
-					variant="destructive"
-					onClick={handleDelete}
-					className={"bg-rose-600 hover:bg-red-600 w-24"}
-				>
-					Delete
-				</Button>
-			</DialogFooter>
-		</Modal>
-
-		// <Dialog open={open} onOpenChange={onOpenChange}>
-		// 	<DialogContent>
-		// 		<DialogHeader>
-		// 			<DialogTitle className={"text-red-500"}>Delete Product</DialogTitle>
-		// 		</DialogHeader>
-		// 		<p>Are you sure want to delete this product?</p>
-		// 		<DialogFooter>
-		// 			<Button variant="outline" onClick={() => onOpenChange(false)}>
-		// 				Cancel
-		// 			</Button>
-		// 			<Button
-		// 				variant="destructive"
-		// 				onClick={handleDelete}
-		// 				className={"bg-rose-600 hover:bg-red-600"}
-		// 			>
-		// 				Delete
-		// 			</Button>
-		// 		</DialogFooter>
-		// 	</DialogContent>
-		// </Dialog>
+			description={
+				<span>
+					Are you sure you want to delete <span className="font-bold">{productName}</span>? This
+					action cannot be undone.
+				</span>
+			}
+		/>
 	);
 }

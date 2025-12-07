@@ -11,11 +11,12 @@ import InvoiceDownloadModal from "./InvoiceDownloadModal";
 
 import { getInvoiceWithItems } from "@/lib/actions/invoice/getInvoiceWithItem";
 
-import { formatInvoiceDateTime, getStatusIcons, getStatusVariant, toTitleCase } from "@/lib/utils";
+import { formatInvoiceDateTime, toTitleCase } from "@/lib/utils";
 
 import { Pencil, Trash2, Download, FileText, Search, Filter, Zap } from "lucide-react";
 import Link from "next/link";
 import SortIcon from "@/components/dashboard/SortIcon";
+import InlineStatusUpdate from "./InlineStatusUpdate";
 
 const InvoicesTable = forwardRef(function InvoicesTable(
 	{ invoices = [], totalPages = 0, totalCount = 0 },
@@ -169,14 +170,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(
 										</span>
 									</td>
 									<td className="px-6 py-4 text-center">
-										<span
-											className={`text-xs font-semibold px-3 py-1.5 inline-flex items-center rounded-full ${getStatusVariant(
-												data.status
-											)}`}
-										>
-											{getStatusIcons(data.status)}
-											{toTitleCase(data.status)}
-										</span>
+										<InlineStatusUpdate invoiceId={data.id} currentStatus={data.status} />
 									</td>
 									<td className="px-6 py-4">
 										<div className="flex items-center justify-center gap-1">
@@ -278,6 +272,7 @@ const InvoicesTable = forwardRef(function InvoicesTable(
 				open={deleteModalOpen}
 				onOpenChange={setDeleteModalOpen}
 				invoiceId={selectedInvoice?.id}
+				invoiceNumber={selectedInvoice?.invoiceNumber}
 				onSuccess={() => {
 					// Refresh data after delete
 					router.refresh();

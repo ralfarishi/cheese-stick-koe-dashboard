@@ -1,51 +1,51 @@
 "use client";
 
-import { DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-
-import Modal from "@/components/dashboard/Modal";
-
-import { deleteInvoice } from "@/lib/actions/invoice/deleteInvoice";
-
+import { useState } from "react";
 import { toast } from "sonner";
+import { deleteInvoice } from "@/lib/actions/invoice/deleteInvoice";
+import DeleteConfirmationModal from "@/components/dashboard/DeleteConfirmationModal";
 
-export default function DeleteInvoiceModal({ open, onOpenChange, invoiceId, onSuccess }) {
+export default function DeleteInvoiceModal({
+	open,
+	onOpenChange,
+	invoiceId,
+	invoiceNumber,
+	onSuccess,
+}) {
+	const [isDeleting, setIsDeleting] = useState(false);
+
 	const handleDelete = async () => {
 		if (!invoiceId) {
 			toast.error("Invoice ID not found");
 			return;
 		}
 
-		const result = await deleteInvoice(invoiceId);
+		setIsDeleting(true);
+		try {
+			const result = await deleteInvoice(invoiceId);
 
-		if (result?.success) {
-			toast.success("Invoice has been deleted");
-			onSuccess?.();
-			onOpenChange(false);
-		} else {
-			toast.error(result?.message || "Failed to delete invoice");
+			if (result?.success) {
+				toast.success("Invoice has been deleted");
+				onSuccess?.();
+				onOpenChange(false);
+			} else {
+				toast.error(result?.message || "Failed to delete invoice");
+			}
+		} catch (error) {
+			toast.error("An error occurred while deleting invoice");
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
 	return (
-		<Modal
+		<DeleteConfirmationModal
 			open={open}
 			onOpenChange={onOpenChange}
-			title="Delete Invoice"
-			color="red"
-			submitLabel="Delete"
-			showCancel={false}
-		>
-			<p>Are you sure want to delete this invoice?</p>
-			<DialogFooter className="flex flex-wrap items-center gap-2 md:flex-row">
-				<Button
-					variant="destructive"
-					onClick={handleDelete}
-					className="bg-rose-600 hover:bg-red-600 w-24"
-				>
-					Delete
-				</Button>
-			</DialogFooter>
-		</Modal>
+			onConfirm={handleDelete}
+			isDeleting={isDeleting}
+			title={`Invoice #${invoiceNumber}`}
+			description="Are you sure want to delete this invoice? This action cannot be undone."
+		/>
 	);
 }
