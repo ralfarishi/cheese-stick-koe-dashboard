@@ -146,3 +146,8 @@ export function formatLockoutTime(resetTime) {
 
 	return `${minutes} minute${minutes > 1 ? "s" : ""}`;
 }
+
+export function formatCurrency(value) {
+	if (value === undefined || value === null || isNaN(value)) return "0";
+	return Number(value).toLocaleString("id-ID");
+}

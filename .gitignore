@@ -45,4 +45,6 @@ next-env.d.ts
 /prisma/
 /supabase/query/
 
+tests/
+
 db_backups

@@ -89,6 +89,8 @@ export default function UpdateInvoiceForm({ invoice, productsData = [], sizesDat
 					quantity,
 					price,
 					discountAmount,
+					costPerItem: item.costPerItem || 0,
+					totalCost: item.totalCost || 0,
 					discountInput: String(discountAmount),
 					discountMode: "amount",
 					total: subtotal - discountAmount,

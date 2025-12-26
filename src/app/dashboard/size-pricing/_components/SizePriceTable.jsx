@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 
 import { Button } from "@/components/ui/button";
 
 import EditSizeModal from "./EditSizeModal";
 import DeleteSizeModal from "./DeleteSizeModal";
+import ManageRecipeModal from "./ManageRecipeModal";
 
-import { Pencil, Trash2, FileText } from "lucide-react";
+import { Pencil, Trash2, FileText, ChefHat } from "lucide-react";
 
 import { formatDateTime } from "@/lib/utils";
 import SortIcon from "@/components/dashboard/SortIcon";
@@ -26,11 +27,20 @@ const SizePriceTable = forwardRef(function SizePriceTable(
 	const [selectedSize, setSelectedSize] = useState(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
+	const [recipeModalOpen, setRecipeModalOpen] = useState(false);
 
 	// Get current state from URL
 	const currentPage = Number(searchParams.get("page")) || 1;
 	const sortOrder = searchParams.get("sortOrder")?.toString() || "asc";
 	const sortBy = searchParams.get("sortBy")?.toString() || "size";
+
+	// Sync selectedSize if data updates in background
+	useEffect(() => {
+		if (selectedSize) {
+			const updated = data.find((d) => d.id === selectedSize.id);
+			if (updated) setSelectedSize(updated);
+		}
+	}, [data, selectedSize?.id]);
 
 	const handleSort = (column) => {
 		const params = new URLSearchParams(searchParams);
@@ -133,6 +143,19 @@ const SizePriceTable = forwardRef(function SizePriceTable(
 											<Button
 												onClick={() => {
 													setSelectedSize(item);
+													setRecipeModalOpen(true);
+												}}
+												variant="ghost"
+												size="icon"
+												className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 rounded-lg"
+												title="Manage Recipe"
+											>
+												<ChefHat className="h-4 w-4" />
+											</Button>
+											<div className="w-px h-4 bg-gray-200 mx-1" />
+											<Button
+												onClick={() => {
+													setSelectedSize(item);
 													setEditModalOpen(true);
 												}}
 												variant="ghost"
@@ -228,6 +251,12 @@ const SizePriceTable = forwardRef(function SizePriceTable(
 					router.refresh();
 					setSelectedSize(null);
 				}}
+			/>
+
+			<ManageRecipeModal
+				open={recipeModalOpen}
+				onOpenChange={setRecipeModalOpen}
+				size={selectedSize}
 			/>
 		</div>
 	);

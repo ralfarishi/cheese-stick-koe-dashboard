@@ -16,6 +16,7 @@ import {
 	Settings,
 	Tags,
 	X,
+	ChefHat,
 } from "lucide-react";
 
 import { logout } from "@/lib/actions/auth";
@@ -38,6 +39,7 @@ export function Sidebar() {
 			icon: Package,
 		},
 		{ name: "Size & Price", href: "/dashboard/size-pricing", icon: Tags },
+		{ name: "Ingredients", href: "/dashboard/ingredients", icon: ChefHat },
 		{
 			name: "Invoices",
 			href: "/dashboard/invoices",
