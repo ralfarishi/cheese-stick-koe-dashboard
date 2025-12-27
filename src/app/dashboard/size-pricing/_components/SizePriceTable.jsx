@@ -75,7 +75,7 @@ const SizePriceTable = forwardRef(function SizePriceTable(
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 					<div>
 						<h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-							<FileText className="w-6 h-6 text-[#8B2E1F]" />
+							<FileText className="w-6 h-6 text-[#8B2E1F] hidden md:block" />
 							Size & Price List
 						</h2>
 						<p className="text-sm text-gray-500 mt-1">Manage and track all your size data</p>
@@ -263,4 +263,3 @@ const SizePriceTable = forwardRef(function SizePriceTable(
 });
 
 export default SizePriceTable;
-

@@ -60,8 +60,8 @@ export default function AddSizeModal({ open, setOpen, onSuccess }) {
 		<Modal
 			open={open}
 			onOpenChange={setOpen}
-			title="Add Size"
-			color="default"
+			title="Add New Size"
+			color="terracotta"
 			fields={[
 				{
 					name: "size",
@@ -103,10 +103,9 @@ export default function AddSizeModal({ open, setOpen, onSuccess }) {
 				},
 			]}
 			onSubmit={handleSubmit(onSubmit)}
-			submitLabel={isSubmitting ? "Adding..." : "Add"}
+			submitLabel={isSubmitting ? "Adding..." : "Create Size"}
 			isSubmitting={isSubmitting}
 			showCancel={false}
-			buttonStyling="bg-primary"
 		/>
 	);
 }

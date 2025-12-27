@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import ProductDeleteModal from "./ProductDeleteModal";
 import ProductEditModal from "./ProductEditModal";
 
-import { Pencil, Trash2, FileText, Filter, Search } from "lucide-react";
+import { Pencil, Trash2, Filter, Search, Package } from "lucide-react";
 
 import { formatDateTime } from "@/lib/utils";
 import SortIcon from "@/components/dashboard/SortIcon";
@@ -87,7 +87,7 @@ const ProductTable = forwardRef(function ProductTable(
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 					<div>
 						<h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-							<FileText className="w-6 h-6 text-[#8B2E1F]" />
+							<Package className="w-6 h-6 text-[#8B2E1F] hidden md:block" />
 							Product List
 						</h2>
 						<p className="text-sm text-gray-500 mt-1">Manage and track all your products</p>
@@ -206,7 +206,7 @@ const ProductTable = forwardRef(function ProductTable(
 								<td colSpan="6" className="px-6 py-12 text-center">
 									<div className="flex flex-col items-center gap-3">
 										<div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-											<FileText className="w-8 h-8 text-gray-400" />
+											<Package className="w-8 h-8 text-gray-400" />
 										</div>
 										<p className="text-gray-500 font-medium">No product data available</p>
 										<p className="text-sm text-gray-400">

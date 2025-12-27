@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, ChefHat, History, TrendingUp, Search, MoreHorizontal } from "lucide-react";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
@@ -95,7 +95,7 @@ const IngredientTable = forwardRef(function IngredientTable(
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 					<div>
 						<h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-							<ChefHat className="w-6 h-6 text-[#8B2E1F]" />
+							<ChefHat className="w-6 h-6 text-[#8B2E1F] hidden md:block" />
 							Ingredients Master Data
 						</h2>
 						<p className="text-sm text-gray-500 mt-1">

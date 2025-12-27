@@ -376,7 +376,7 @@ const InvoicePreview = forwardRef(
 										QRIS a.n Cheese Stick Koe
 									</p>
 									<div className="relative w-full aspect-square max-w-[200px] mx-auto rounded-lg flex items-center justify-center">
-										<Image src="/qris.png" width={155} height={155} alt="QRIS" />
+										<Image src="/qris.png" width={165} height={165} alt="QRIS" />
 									</div>
 								</div>
 
@@ -429,22 +429,24 @@ const InvoicePreview = forwardRef(
 										<table className="w-full text-sm">
 											<thead className="text-white" style={{ backgroundColor: "#8B2E1F" }}>
 												<tr>
-													<th className="px-4 py-3 text-left text-sm font-semibold uppercase">
+													<th className="px-4 py-3 text-left text-sm font-semibold uppercase whitespace-nowrap">
 														Item
 													</th>
-													<th className="px-4 py-3 text-center text-sm font-semibold uppercase">
+													<th className="px-4 py-3 text-center text-sm font-semibold uppercase whitespace-nowrap">
 														Ukuran
 													</th>
-													<th className="px-4 py-3 text-center text-sm font-semibold uppercase">
+													<th className="px-4 py-3 text-center text-sm font-semibold uppercase whitespace-nowrap">
 														Jml
 													</th>
-													<th className="px-4 py-3 text-center text-sm font-semibold uppercase">
+													<th className="px-4 py-3 text-center text-sm font-semibold uppercase whitespace-nowrap">
 														Harga
 													</th>
-													<th className="px-4 py-3 text-center text-sm font-semibold uppercase">
-														Diskon
-													</th>
-													<th className="px-4 py-3 text-center text-sm font-semibold uppercase">
+													{invoice.discount > 0 && (
+														<th className="px-4 py-3 text-center text-sm font-semibold uppercase whitespace-nowrap">
+															Diskon
+														</th>
+													)}
+													<th className="px-4 py-3 text-center text-sm font-semibold uppercase whitespace-nowrap">
 														Total
 													</th>
 												</tr>
@@ -458,10 +460,10 @@ const InvoicePreview = forwardRef(
 															backgroundColor: i % 2 === 0 ? "#ffffff" : "#fffbf5",
 														}}
 													>
-														<td className="px-4 py-3 font-medium text-gray-800">
+														<td className="px-4 py-3 font-medium text-gray-800 whitespace-nowrap">
 															{item.productName}
 														</td>
-														<td className="px-4 py-3 text-center">
+														<td className="px-4 py-3 text-center whitespace-nowrap">
 															<span
 																className="inline-block px-2 py-1 rounded-full text-xs font-semibold"
 																style={{
@@ -480,19 +482,21 @@ const InvoicePreview = forwardRef(
 																{item.quantity}
 															</span>
 														</td>
-														<td className="px-4 py-3 text-center text-gray-700">
+														<td className="px-4 py-3 text-center text-gray-700 whitespace-nowrap">
 															Rp {item.price.toLocaleString("id-ID")}
 														</td>
-														<td
-															className={`px-4 py-3 text-center font-semibold ${
-																item.discountAmount > 0 ? "text-green-600" : "text-gray-400"
-															}`}
-														>
-															{item.discountAmount
-																? `-Rp ${item.discountAmount.toLocaleString("id-ID")}`
-																: "-"}
-														</td>
-														<td className="px-4 py-3 text-center font-semibold text-gray-800">
+														{invoice.discount > 0 && (
+															<td
+																className={`px-4 py-3 text-center font-semibold whitespace-nowrap ${
+																	item.discountAmount > 0 ? "text-green-600" : "text-gray-400"
+																}`}
+															>
+																{item.discountAmount
+																	? `-Rp ${item.discountAmount.toLocaleString("id-ID")}`
+																	: "-"}
+															</td>
+														)}
+														<td className="px-4 py-3 text-center font-semibold text-gray-800 whitespace-nowrap">
 															Rp {item.total.toLocaleString("id-ID")}
 														</td>
 													</tr>
@@ -500,7 +504,7 @@ const InvoicePreview = forwardRef(
 
 												{Array.from({ length: gapRows }).map((_, idx) => (
 													<tr key={`gap-${idx}`} className="h-10">
-														<td colSpan="6"></td>
+														<td colSpan={invoice.discount > 0 ? 6 : 5}></td>
 													</tr>
 												))}
 											</tbody>

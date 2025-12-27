@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Zap } from "lucide-react";
 import AddIngredientModal from "./AddIngredientModal";
 
 export default function AddIngredientButton({ onSuccess }) {
@@ -12,9 +12,9 @@ export default function AddIngredientButton({ onSuccess }) {
 		<>
 			<Button
 				onClick={() => setOpen(true)}
-				className="bg-gradient-to-r from-[#8B2E1F] to-[#A63825] hover:from-[#6D2315] hover:to-[#8B2E1F] text-white shadow-lg hover:shadow-xl transition-all duration-300 gap-2 rounded-xl"
+				className="bg-white text-[#6D2315] hover:bg-[#6D2315] hover:text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 hover:scale-105"
 			>
-				<Plus className="w-4 h-4" />
+				<Zap className="w-4 h-4" />
 				Add Ingredient
 			</Button>
 

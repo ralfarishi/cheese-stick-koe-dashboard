@@ -62,7 +62,7 @@ export default function ProductModal({ open, setOpen, onSuccess }) {
 			open={open}
 			onOpenChange={setOpen}
 			title="Add Product"
-			color="default"
+			color="terracotta"
 			fields={[
 				{
 					name: "name",
@@ -101,10 +101,9 @@ export default function ProductModal({ open, setOpen, onSuccess }) {
 				},
 			]}
 			onSubmit={handleSubmit(onSubmit)}
-			submitLabel={isSubmitting ? "Adding..." : "Add"}
+			submitLabel={isSubmitting ? "Adding..." : "Create Product"}
 			isSubmitting={isSubmitting}
 			showCancel={false}
-			buttonStyling="bg-primary"
 		/>
 	);
 }

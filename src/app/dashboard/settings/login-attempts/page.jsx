@@ -16,7 +16,7 @@ export default async function LoginAttemptsPage() {
 				{/* Header */}
 				<div className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-100">
 					<div className="flex items-center gap-4">
-						<div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
+						<div className="w-12 h-12 bg-orange-50 rounded-xl hidden md:flex items-center justify-center">
 							<ShieldAlert className="w-6 h-6 text-[#8B2E1F]" />
 						</div>
 						<div>

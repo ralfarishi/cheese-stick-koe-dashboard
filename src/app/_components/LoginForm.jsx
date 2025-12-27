@@ -9,193 +9,178 @@ import { login } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import {
-  ChevronRight,
-  Eye,
-  EyeClosed,
-  LoaderCircle,
-  Lock,
-  Mail,
-} from "lucide-react";
+import { ChevronRight, Eye, EyeClosed, LoaderCircle, Lock } from "lucide-react";
+import InteractiveBackground from "./InteractiveBackground";
 
 export default function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isPending, startTransition] = useTransition();
+	const [showPassword, setShowPassword] = useState(false);
+	const [isPending, startTransition] = useTransition();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+	} = useForm({
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+	});
 
-  const onSubmit = async (data) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-      toast.error("Invalid email format");
-      return;
-    }
+	const onSubmit = async (data) => {
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(data.email)) {
+			toast.error("Invalid email format");
+			return;
+		}
 
-    if (data.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
+		if (data.password.length < 6) {
+			toast.error("Password must be at least 6 characters");
+			return;
+		}
 
-    startTransition(async () => {
-      const formData = new FormData();
-      formData.append("email", data.email.trim().toLowerCase());
-      formData.append("password", data.password);
+		startTransition(async () => {
+			const formData = new FormData();
+			formData.append("email", data.email.trim().toLowerCase());
+			formData.append("password", data.password);
 
-      const result = await login(formData);
+			const result = await login(formData);
 
-      if (result?.error) {
-        toast.error(result.error);
-      }
-      // Success will be auto-redirect via server action
-    });
-  };
+			if (result?.error) {
+				toast.error(result.error);
+			}
+		});
+	};
 
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-orange-50 via-red-50 to-amber-50 relative overflow-hidden">
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Cheese Stick Koe
-          </h1>
-          <p className="text-gray-500">Invoice Management System</p>
-        </div>
+	return (
+		<div className="min-h-screen w-full bg-[#FCF9F1] flex items-center justify-center p-6 relative overflow-hidden selection:bg-[#8B2E1F]/10">
+			<InteractiveBackground />
+			<div className="relative z-10 w-full max-w-5xl">
+				<form
+					onSubmit={handleSubmit(onSubmit)}
+					className="flex flex-col md:flex-row items-center md:items-start justify-center gap-6 md:gap-10"
+				>
+					{/* Branding Slip - Top Left Staggered */}
+					<div className="hidden md:flex w-full md:w-80 bg-[#8B2E1F] p-8 rounded-[1.5rem] shadow-[20px_20px_0px_0px_rgba(139,46,31,0.05)] md:translate-y-[-40px] animate-item-enter group transition-all flex-col duration-500 hover:translate-y-[-45px]">
+						<div className="w-16 h-16 bg-[#FCF9F1] rounded-2xl flex items-center justify-center mb-8 shadow-inner">
+							<Lock className="w-8 h-8 text-[#8B2E1F]" />
+						</div>
+						<h1 className="text-4xl font-black text-[#FCF9F1] tracking-tighter leading-tight mb-4">
+							Chef Access Only.
+						</h1>
+						<p className="text-[#FCF9F1]/50 text-xs font-bold uppercase tracking-widest leading-loose">
+							Secure Gateway <br /> to the Snack Empire.
+						</p>
+					</div>
 
-        <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#8B2E1F] to-[#A63825] px-8 py-6 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl mb-3">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-1">
-              Welcome Back!
-            </h2>
-            <p className="text-white/80 text-sm">Please login to continue</p>
-          </div>
+					{/* Form Core Slip - Center Main */}
+					<div className="flex-1 w-full max-w-[440px] bg-white p-10 md:p-12 rounded-[2rem] shadow-[0_64px_96px_-32px_rgba(139,46,31,0.08)] border border-[#8B2E1F]/5 animate-fade-in-delay">
+						<div className="space-y-10">
+							<header>
+								<h2 className="text-3xl font-black text-[#2D2424] tracking-tight">
+									Identity Check
+								</h2>
+								<div className="w-12 h-1 bg-[#8B2E1F] mt-3 rounded-full" />
+							</header>
 
-          <div className="p-8">
-            <div className="space-y-6">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
-                  >
-                    <Mail className="w-4 h-4 text-[#8B2E1F]" />
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Controller
-                      name="email"
-                      control={control}
-                      rules={{ required: "Email is required!" }}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          id="email"
-                          type="email"
-                          placeholder="you@example.com"
-                          className="pl-11"
-                          disabled={isPending}
-                          required
-                        />
-                      )}
-                    />
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  </div>
-                </div>
+							<div className="space-y-8">
+								<div className="space-y-3">
+									<label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B2E1F]/50 px-1">
+										Email
+									</label>
+									<Controller
+										name="email"
+										control={control}
+										rules={{ required: "Required" }}
+										render={({ field }) => (
+											<div className="relative group">
+												<Input
+													{...field}
+													type="email"
+													placeholder="user@mail.com"
+													className="h-14 px-6 border-2 border-[#FCF9F1] bg-[#FCF9F1]/80 rounded-2xl focus:bg-white focus:border-[#8B2E1F] focus:ring-0 transition-all duration-300 text-[#2D2424] font-bold placeholder:text-gray-300 shadow-none outline-none"
+													disabled={isPending}
+												/>
+											</div>
+										)}
+									/>
+								</div>
 
-                <div className="space-y-2">
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-semibold text-gray-700 flex items-center gap-2"
-                  >
-                    <Lock className="w-4 h-4 text-[#8B2E1F]" />
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Controller
-                      name="password"
-                      control={control}
-                      rules={{ required: "Password is required!" }}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          className="pl-11 pr-11"
-                          disabled={isPending}
-                          required
-                        />
-                      )}
-                    />
+								<div className="space-y-3">
+									<label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B2E1F]/50 px-1">
+										Access Key
+									</label>
+									<Controller
+										name="password"
+										control={control}
+										rules={{ required: "Required" }}
+										render={({ field }) => (
+											<div className="relative group">
+												<Input
+													{...field}
+													type={showPassword ? "text" : "password"}
+													placeholder="••••••••"
+													className="h-14 px-6 border-2 border-[#FCF9F1] bg-[#FCF9F1]/80 rounded-2xl focus:bg-white focus:border-[#8B2E1F] focus:ring-0 transition-all duration-300 text-[#2D2424] font-bold placeholder:text-gray-300 shadow-none outline-none"
+													disabled={isPending}
+												/>
+												<button
+													type="button"
+													onClick={() => setShowPassword(!showPassword)}
+													className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-200 hover:text-[#8B2E1F] transition-colors"
+												>
+													{showPassword ? (
+														<EyeClosed className="w-5 h-5" />
+													) : (
+														<Eye className="w-5 h-5" />
+													)}
+												</button>
+											</div>
+										)}
+									/>
+								</div>
+							</div>
 
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeClosed className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+							<Button
+								className={`w-full h-16 rounded-2xl font-black text-lg transition-all duration-500 overflow-hidden relative group ${
+									isPending
+										? "bg-gray-100 text-gray-400"
+										: "bg-[#8B2E1F] text-white hover:bg-[#6D2315] shadow-[0_12px_24px_-8px_rgba(139,46,31,0.3)] hover:shadow-[0_20px_40px_-12px_rgba(139,46,31,0.4)]"
+								}`}
+								type="submit"
+								disabled={isPending}
+							>
+								<div className="relative z-10 flex items-center justify-center gap-3">
+									{isPending ? (
+										<LoaderCircle className="w-6 h-6 animate-spin" />
+									) : (
+										<>
+											<span>Authenticate</span>
+											<ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+										</>
+									)}
+								</div>
+							</Button>
+						</div>
+					</div>
 
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-[#8B2E1F] focus:ring-[#8B2E1F]"
-                    />
-                    <span className="text-gray-600 group-hover:text-gray-900 transition-colors">
-                      Remember me
-                    </span>
-                  </label>
-                </div>
-
-                <Button
-                  className={`w-full px-6 py-3.5 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
-                    isPending
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#8B2E1F] to-[#A63825] hover:from-[#6D2315] hover:to-[#8B2E1F] text-white shadow-lg hover:shadow-xl hover:scale-105"
-                  }`}
-                  type="submit"
-                  disabled={isPending}
-                  onClick={handleSubmit}
-                >
-                  {isPending ? (
-                    <>
-                      <LoaderCircle className="w-5 h-5 animate-spin" />
-                      Logging in...
-                    </>
-                  ) : (
-                    <>
-                      Login
-                      <ChevronRight className="w-5 h-5" />
-                    </>
-                  )}
-                </Button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-center text-sm text-gray-500 mt-8">
-          © {new Date().getFullYear()} Cheese Stick Koe. All rights reserved.
-        </p>
-      </div>
-    </div>
-  );
+					{/* Metadata Slip - Small Offset Right */}
+					<div className="hidden md:flex w-full md:w-64 bg-[#FCF9F1] border-2 border-[#8B2E1F]/35 p-8 rounded-[1.5rem] shadow-[32px_32px_64px_-16px_rgba(139,46,31,0.05)] md:translate-y-[60px] animate-item-enter md:delay-200 flex-col justify-between min-h-[120px] md:min-h-[200px]">
+						<div className="space-y-4">
+							<div className="flex gap-1">
+								{[...Array(3)].map((_, i) => (
+									<div key={i} className="w-2 h-2 rounded-full bg-[#8B2E1F]/20" />
+								))}
+							</div>
+							<p className="text-[10px] font-black text-[#8B2E1F]/40 uppercase tracking-[0.25em] leading-relaxed">
+								System Version <br /> LTS 2.0.1
+							</p>
+						</div>
+						<p className="text-[9px] font-black text-[#2D2424]/30 uppercase tracking-[0.25em]">
+							© {new Date().getFullYear()} CHEESE STICK KOE.
+						</p>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
 }

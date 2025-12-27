@@ -335,7 +335,7 @@ export default function UpdateInvoiceForm({ invoice, productsData = [], sizesDat
 					{/* Page Title */}
 					<div className="bg-gradient-to-r from-[#8B2E1F] to-[#A63825] rounded-2xl p-6 md:p-8 shadow-xl">
 						<div className="flex items-center gap-4">
-							<div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+							<div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl hidden md:flex items-center justify-center">
 								<Receipt className="w-8 h-8 text-white" />
 							</div>
 							<div>
@@ -808,4 +808,3 @@ export default function UpdateInvoiceForm({ invoice, productsData = [], sizesDat
 		</section>
 	);
 }
-

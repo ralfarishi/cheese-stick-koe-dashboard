@@ -79,10 +79,10 @@ export default async function Dashboard() {
 	} = stats;
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 p-6">
+		<div className="min-h-screen bg-orange-50/30 p-4 sm:p-6">
 			<div className="max-w-7xl mx-auto space-y-6">
 				{/* Header Welcome Section */}
-				<div className="relative overflow-hidden bg-gradient-to-r from-[#8B2E1F] via-[#A63825] to-[#6D2315] rounded-3xl p-8 shadow-xl">
+				<div className="relative overflow-hidden bg-[#8B2E1F] rounded-3xl p-6 sm:p-8 shadow-xl">
 					{/* Decorative Elements */}
 					<div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
 					<div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
@@ -90,7 +90,7 @@ export default async function Dashboard() {
 					<div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
 						<div className="space-y-2">
 							<div className="flex items-center gap-3">
-								<div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+								<div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl hidden md:flex sm:hidden items-center justify-center">
 									<Activity className="w-6 h-6 text-white" />
 								</div>
 								<div>
@@ -117,10 +117,10 @@ export default async function Dashboard() {
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 					{/* Total Invoices */}
 					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-[#8B2E1F] transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-						<div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#8B2E1F]/5 to-transparent rounded-bl-full"></div>
+						<div className="absolute top-0 right-0 w-24 h-24 bg-[#8B2E1F]/5 rounded-bl-full"></div>
 						<div className="relative">
 							<div className="flex items-center justify-between mb-4">
-								<div className="w-12 h-12 bg-gradient-to-br from-[#8B2E1F] to-[#A63825] rounded-xl flex items-center justify-center shadow-lg">
+								<div className="w-12 h-12 bg-[#8B2E1F] rounded-xl flex items-center justify-center shadow-lg">
 									<FileText className="w-6 h-6 text-white" />
 								</div>
 								<div className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full flex items-center gap-1">
@@ -135,10 +135,10 @@ export default async function Dashboard() {
 
 					{/* Total Income */}
 					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-amber-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-						<div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/5 to-transparent rounded-bl-full"></div>
+						<div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full"></div>
 						<div className="relative">
 							<div className="flex items-center justify-between mb-4">
-								<div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
+								<div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg">
 									<Wallet className="w-6 h-6 text-white" />
 								</div>
 								<div className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full flex items-center gap-1">
@@ -155,10 +155,10 @@ export default async function Dashboard() {
 
 					{/* Total Products */}
 					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-purple-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-						<div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/5 to-transparent rounded-bl-full"></div>
+						<div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 rounded-bl-full"></div>
 						<div className="relative">
 							<div className="flex items-center justify-between mb-4">
-								<div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+								<div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-lg">
 									<Package className="w-6 h-6 text-white" />
 								</div>
 								<div className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
@@ -172,10 +172,10 @@ export default async function Dashboard() {
 
 					{/* Paid Invoices */}
 					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-emerald-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-						<div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full"></div>
+						<div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full"></div>
 						<div className="relative">
 							<div className="flex items-center justify-between mb-4">
-								<div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+								<div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
 									<CheckCircle className="w-6 h-6 text-white" />
 								</div>
 								<div className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
@@ -189,10 +189,10 @@ export default async function Dashboard() {
 
 					{/* Unpaid Invoices */}
 					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-rose-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-						<div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-rose-500/5 to-transparent rounded-bl-full"></div>
+						<div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-bl-full"></div>
 						<div className="relative">
 							<div className="flex items-center justify-between mb-4">
-								<div className="w-12 h-12 bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl flex items-center justify-center shadow-lg">
+								<div className="w-12 h-12 bg-rose-500 rounded-xl flex items-center justify-center shadow-lg">
 									<AlertTriangle className="w-6 h-6 text-white" />
 								</div>
 								<div className="text-xs font-semibold text-rose-600 bg-rose-50 px-3 py-1 rounded-full">
@@ -206,10 +206,10 @@ export default async function Dashboard() {
 
 					{/* Total Customers */}
 					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-						<div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full"></div>
+						<div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full"></div>
 						<div className="relative">
 							<div className="flex items-center justify-between mb-4">
-								<div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+								<div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
 									<Users className="w-6 h-6 text-white" />
 								</div>
 								<div className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full flex items-center gap-1">
@@ -226,13 +226,15 @@ export default async function Dashboard() {
 				<CustomerChart initialData={customerStats} />
 
 				{/* Latest Invoices Section */}
-				<div className="bg-white rounded-3xl p-8 shadow-lg border border-gray-100">
-					<div className="flex items-center justify-between mb-6">
+				<div className="bg-white rounded-3xl p-5 sm:p-8 shadow-lg border border-gray-100">
+					<div className="flex flex-col xs:flex-row xs:items-center justify-between gap-4 mb-6">
 						<div>
-							<h2 className="text-2xl font-bold text-gray-900">Latest Invoices</h2>
-							<p className="text-sm text-gray-500 mt-1">Recent transactions and their status</p>
+							<h2 className="text-xl sm:text-2xl font-bold text-gray-900">Latest Invoices</h2>
+							<p className="text-xs sm:text-sm text-gray-500 mt-1">
+								Recent transactions and status
+							</p>
 						</div>
-						<Link href="/dashboard/invoices">
+						<Link href="/dashboard/invoices" className="shrink-0">
 							<button className="text-[#8B2E1F] hover:text-[#6D2315] font-semibold text-sm flex items-center gap-2 hover:gap-3 transition-all">
 								View All
 								<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,34 +249,36 @@ export default async function Dashboard() {
 						</Link>
 					</div>
 
-					<div className="space-y-3">
+					<div className="space-y-2">
 						{latestInvoices && latestInvoices.length > 0 ? (
 							latestInvoices.map((inv) => (
 								<div
 									key={inv.id}
-									className="group flex items-center justify-between bg-gradient-to-r from-gray-50 to-white hover:from-orange-50 hover:to-red-50 border border-gray-100 hover:border-[#8B2E1F] rounded-2xl p-5 transition-all duration-300 hover:shadow-md cursor-pointer"
+									className="group flex flex-col xs:flex-row xs:items-center justify-between bg-gray-50 hover:bg-orange-50 border border-gray-100 hover:border-[#8B2E1F] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:shadow-md cursor-pointer gap-4"
 								>
 									{/* Left Section */}
 									<div className="flex items-center gap-4">
-										<div className="w-14 h-14 bg-gradient-to-br from-[#8B2E1F] to-[#A63825] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-											<FileText className="w-7 h-7 text-white" />
+										<div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#8B2E1F] rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0">
+											<FileText className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
 										</div>
-										<div>
-											<p className="font-bold text-gray-900 text-lg">#{inv.invoiceNumber}</p>
-											<p className="text-sm text-gray-500 flex items-center gap-2">
-												<Users className="w-4 h-4" />
+										<div className="min-w-0">
+											<p className="font-bold text-gray-900 text-base sm:text-lg truncate">
+												#{inv.invoiceNumber}
+											</p>
+											<p className="text-xs sm:text-sm text-gray-500 flex items-center gap-2 truncate">
+												<Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 hidden sm:block shrink-0" />
 												{toTitleCase(inv.buyerName)}
 											</p>
 										</div>
 									</div>
 
 									{/* Right Section */}
-									<div className="text-right space-y-2">
-										<p className="font-bold text-xl text-gray-900">
+									<div className="flex xs:flex-col items-center xs:items-end justify-between xs:justify-start gap-2">
+										<p className="font-bold text-lg sm:text-xl text-gray-900">
 											Rp {inv.totalPrice.toLocaleString("id-ID")}
 										</p>
 										<span
-											className={`text-xs font-semibold px-4 py-1.5 inline-flex items-center rounded-full ${getStatusVariant(
+											className={`text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1 sm:py-1.5 inline-flex items-center rounded-full ${getStatusVariant(
 												inv.status
 											)}`}
 										>

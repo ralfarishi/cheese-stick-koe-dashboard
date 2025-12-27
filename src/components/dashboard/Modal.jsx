@@ -27,20 +27,22 @@ export default function Modal({
 	const getColorClass = () => {
 		switch (color) {
 			case "red":
-				return "text-red-500";
+				return "text-red-500 font-bold";
 			case "blue":
-				return "text-blue-500";
+				return "text-blue-500 font-bold";
 			case "green":
-				return "text-green-500";
+				return "text-green-500 font-bold";
+			case "terracotta":
+				return "text-[#8B2E1F] font-black uppercase tracking-tight text-xl";
 			default:
-				return "";
+				return "font-bold";
 		}
 	};
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
+			<DialogContent className="rounded-[2rem] border-[#8B2E1F]/10 shadow-[0_32px_64px_-16px_rgba(139,46,31,0.1)] p-8">
+				<DialogHeader className="mb-4">
 					<DialogTitle className={getColorClass()}>{title}</DialogTitle>
 				</DialogHeader>
 
@@ -69,7 +71,11 @@ export default function Modal({
 												value={value}
 												onChange={onChange}
 												ref={ref}
-												className={field.error ? "border-red-500 focus-visible:ring-red-500" : ""}
+												className={`${
+													color === "terracotta"
+														? "h-12 px-4 border-2 border-transparent bg-[#FCF9F1] rounded-xl focus:bg-white focus:border-[#8B2E1F] focus:ring-0 transition-all duration-300 text-[#2D2424] font-medium placeholder:text-gray-300 shadow-none outline-none"
+														: ""
+												} ${field.error ? "border-red-500 focus-visible:ring-red-500" : ""}`}
 											/>
 										)}
 									/>
@@ -80,6 +86,11 @@ export default function Modal({
 										value={field.value}
 										onChange={field.onChange}
 										required={field.required}
+										className={
+											color === "terracotta"
+												? "h-12 px-4 border-2 border-transparent bg-[#FCF9F1] rounded-xl focus:bg-white focus:border-[#8B2E1F] focus:ring-0 transition-all duration-300 text-[#2D2424] font-medium placeholder:text-gray-300 shadow-none outline-none"
+												: ""
+										}
 									/>
 								)}
 								{field.error && (
@@ -87,8 +98,15 @@ export default function Modal({
 								)}
 							</div>
 						))}
-						<DialogFooter>
-							<Button type="submit" className={`w-full ${buttonStyling}`}>
+						<DialogFooter className={color === "terracotta" ? "pt-6" : ""}>
+							<Button
+								type="submit"
+								className={`w-full ${buttonStyling} ${
+									color === "terracotta"
+										? "bg-[#8B2E1F] hover:bg-[#6D2315] text-white h-14 rounded-xl font-bold text-base shadow-[0_8px_16px_-4px_rgba(139,46,31,0.2)] hover:shadow-[0_12px_20px_-4px_rgba(139,46,31,0.3)] transition-all duration-300 hover:scale-[1.01] active:scale-[0.98]"
+										: ""
+								}`}
+							>
 								{submitLabel}
 							</Button>
 						</DialogFooter>
