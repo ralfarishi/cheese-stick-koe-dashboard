@@ -1,26 +1,49 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { product } from "@/db/schema";
+import { ilike } from "drizzle-orm";
 
+/**
+ * Add a new product
+ * @returns {Promise<{data?: Object, error?: Object}>}
+ */
 export async function addProduct({ name, description }) {
-	const supabase = await createClient();
-
-	// Check for duplicate name
-	const { data: existingProduct } = await supabase
-		.from("Product")
-		.select("id")
-		.ilike("name", name)
-		.single();
-
-	if (existingProduct) {
-		return { error: { message: "Product with this name already exists" } };
+	// Input validation
+	if (!name || typeof name !== "string" || !name.trim()) {
+		return { error: { message: "Product name is required" } };
 	}
 
-	const { data, error } = await supabase
-		.from("Product")
-		.insert([{ name, description: description || null }])
-		.select()
-		.single();
-	return { data, error };
+	const safeName = name.trim();
+	const safeDescription = description?.trim() || null;
+
+	// Validate name length
+	if (safeName.length > 100) {
+		return { error: { message: "Product name is too long (max 100 characters)" } };
+	}
+
+	try {
+		// Check for duplicate name (case-insensitive)
+		const [existingProduct] = await db
+			.select({ id: product.id })
+			.from(product)
+			.where(ilike(product.name, safeName))
+			.limit(1);
+
+		if (existingProduct) {
+			return { error: { message: "Product with this name already exists" } };
+		}
+
+		// Insert new product
+		const [data] = await db
+			.insert(product)
+			.values({ name: safeName, description: safeDescription })
+			.returning();
+
+		return { data, error: null };
+	} catch (err) {
+		console.error("Error adding product:", err);
+		return { error: { message: "Failed to add product" } };
+	}
 }
 

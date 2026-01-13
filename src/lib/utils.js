@@ -6,6 +6,11 @@ export function cn(...inputs) {
 	return twMerge(clsx(inputs));
 }
 
+export function escapeForLike(str) {
+	if (!str || typeof str !== "string") return "";
+	return str.replace(/[%_\\]/g, "\\$&");
+}
+
 export function getStatusVariant(status) {
 	switch (status) {
 		case "success":
@@ -42,14 +47,15 @@ export function toTitleCase(str) {
 export function formatDateTime(dateStr, timeStr = null) {
 	if (!dateStr) return "-";
 
-	let dateTimeStr = dateStr;
+	// Handle Date objects by converting to ISO string
+	let dateTimeStr = dateStr instanceof Date ? dateStr.toISOString() : String(dateStr);
 
 	if (timeStr) {
 		// If it's already a full ISO string, just use it
-		if (dateStr.includes("T")) {
-			dateTimeStr = dateStr;
+		if (dateTimeStr.includes("T")) {
+			// dateTimeStr already set
 		} else {
-			dateTimeStr = `${dateStr}T${timeStr}`;
+			dateTimeStr = `${dateTimeStr}T${timeStr}`;
 		}
 	}
 

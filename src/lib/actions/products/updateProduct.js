@@ -1,34 +1,58 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { product } from "@/db/schema";
+import { eq, and, ne, ilike } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Update an existing product
+ * @returns {Promise<{success: boolean, message?: string}>}
+ */
 export async function updateProduct(id, { name, description }) {
-	const supabase = await createClient();
+	// Input validation
+	if (!id || typeof id !== "string") {
+		return { success: false, message: "Invalid product ID" };
+	}
+
+	if (!name || typeof name !== "string" || !name.trim()) {
+		return { success: false, message: "Product name is required" };
+	}
+
+	const safeName = name.trim();
+	const safeDescription = description?.trim() || null;
+
+	if (safeName.length > 255) {
+		return { success: false, message: "Product name is too long (max 255 characters)" };
+	}
 
 	try {
 		// Check for duplicate name (excluding current product)
-		const { data: existingProduct } = await supabase
-			.from("Product")
-			.select("id")
-			.ilike("name", name)
-			.neq("id", id)
-			.single();
+		const [existingProduct] = await db
+			.select({ id: product.id })
+			.from(product)
+			.where(and(ilike(product.name, safeName), ne(product.id, id)))
+			.limit(1);
 
 		if (existingProduct) {
 			return { success: false, message: "Product with this name already exists" };
 		}
 
-		const { error } = await supabase.from("Product").update({ name, description }).eq("id", id);
+		// Update product
+		const result = await db
+			.update(product)
+			.set({ name: safeName, description: safeDescription })
+			.where(eq(product.id, id));
 
-		if (error) {
-			return { success: false, message: "Failed to update product" };
+		if (result.rowCount === 0) {
+			return { success: false, message: "Product not found" };
 		}
 
 		revalidatePath("/dashboard/products");
 
 		return { success: true };
 	} catch (err) {
+		console.error("Error updating product:", err);
 		return { success: false, message: "Failed to update product" };
 	}
 }

@@ -1,7 +1,14 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { invoice } from "@/db/schema";
+import { eq, and, ne, sql } from "drizzle-orm";
 
+/**
+ * Submit a new invoice with items using RPC transaction
+ * @param {Object} params
+ * @returns {Promise<{success?: boolean, error?: string, invoice?: Object, message?: string}>}
+ */
 export const submitInvoice = async ({
 	invoiceNumber,
 	buyerName,
@@ -12,38 +19,43 @@ export const submitInvoice = async ({
 	items,
 	user,
 }) => {
+	// Auth validation
 	if (!user) {
 		return { error: "User is not login!" };
 	}
 
-	if (!invoiceNumber.trim() || !buyerName.trim() || items.length === 0) {
+	// Input validation
+	if (!invoiceNumber?.trim() || !buyerName?.trim() || !Array.isArray(items) || items.length === 0) {
 		return {
 			error: "Invoice number, buyer name, and at least one item are required!",
 		};
 	}
 
-	const supabase = await createClient();
+	// Sanitize inputs
+	const safeInvoiceNumber = invoiceNumber.trim();
+	const safeBuyerName = buyerName.trim();
 
-	// validate number inputs
+	// Validate number inputs
 	const shipping = Number.isNaN(parseInt(shippingPrice)) ? 0 : parseInt(shippingPrice);
 	const discount = Number.isNaN(parseInt(discountAmount)) ? 0 : parseInt(discountAmount);
 	const total = Number.isNaN(parseInt(totalPrice)) ? 0 : parseInt(totalPrice);
 
 	try {
-		// is invoice number already exist?
-		const { data: existing, error: checkError } = await supabase
-			.from("Invoice")
-			.select("id")
-			.eq("invoiceNumber", invoiceNumber)
-			.maybeSingle();
+		// Check if invoice number already exists
+		const [existing] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(eq(invoice.invoiceNumber, safeInvoiceNumber))
+			.limit(1);
 
-		if (checkError) throw checkError;
-		if (existing) return { error: "Invoice number already existed!" };
+		if (existing) {
+			return { error: "Invoice number already existed!" };
+		}
 
 		// Prepare data for RPC
 		const invoiceData = {
-			invoiceNumber,
-			buyerName,
+			invoiceNumber: safeInvoiceNumber,
+			buyerName: safeBuyerName,
 			invoiceDate: new Date(invoiceDate).toISOString(),
 			shipping,
 			discount,
@@ -60,16 +72,18 @@ export const submitInvoice = async ({
 			discountAmount: item.discountAmount || 0,
 		}));
 
-		// Call RPC
-		const { data: invoice, error: rpcError } = await supabase.rpc("create_invoice", {
-			invoice_data: invoiceData,
-			items_data: itemsData,
-		});
+		// Call RPC function via raw SQL (preserves transaction logic)
+		const result = await db.execute(
+			sql`SELECT create_invoice(${JSON.stringify(invoiceData)}::jsonb, ${JSON.stringify(
+				itemsData
+			)}::jsonb) as invoice`
+		);
 
-		if (rpcError) throw rpcError;
+		const invoiceResult = result[0]?.invoice ?? result.rows?.[0]?.invoice;
 
-		return { success: true, message: "Invoice has been created", invoice };
+		return { success: true, message: "Invoice has been created", invoice: invoiceResult };
 	} catch (err) {
+		console.error("Error creating invoice:", err);
 		return { error: "Something went wrong while saving invoice!" };
 	}
 };

@@ -1,21 +1,35 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { invoice } from "@/db/schema";
+import { eq, and, ne, sql } from "drizzle-orm";
 
+/**
+ * Update an existing invoice with items using RPC transaction
+ * @param {Object} params
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
 export async function updateInvoice({ invoiceId, invoiceData, items }) {
-	const supabase = await createClient();
+	// Input validation
+	if (!invoiceId || typeof invoiceId !== "string") {
+		return { success: false, error: "Invalid invoice ID" };
+	}
+
+	if (!invoiceData || !Array.isArray(items)) {
+		return { success: false, error: "Invalid invoice data" };
+	}
 
 	try {
-		// is invoice number already exist?
-		const { data: existing, error: checkError } = await supabase
-			.from("Invoice")
-			.select("id")
-			.eq("invoiceNumber", invoiceData.invoiceNumber)
-			.neq("id", invoiceId) // exclude current invoice number
-			.maybeSingle();
+		// Check if invoice number already exists (excluding current invoice)
+		const [existing] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(and(eq(invoice.invoiceNumber, invoiceData.invoiceNumber), ne(invoice.id, invoiceId)))
+			.limit(1);
 
-		if (checkError) throw checkError;
-		if (existing) return { error: "Invoice number already existed!" };
+		if (existing) {
+			return { success: false, error: "Invoice number already existed!" };
+		}
 
 		// Prepare data for RPC
 		const invoicePayload = {
@@ -36,20 +50,17 @@ export async function updateInvoice({ invoiceId, invoiceData, items }) {
 			discountAmount: item.discountAmount || 0,
 		}));
 
-		// Call RPC
-		const { error: rpcError } = await supabase.rpc("update_invoice", {
-			invoice_id: invoiceId,
-			invoice_data: invoicePayload,
-			items_data: itemsPayload,
-		});
-
-		if (rpcError) {
-			throw rpcError;
-		}
+		// Call RPC function via raw SQL (preserves transaction logic)
+		await db.execute(
+			sql`SELECT update_invoice(${invoiceId}::uuid, ${JSON.stringify(
+				invoicePayload
+			)}::jsonb, ${JSON.stringify(itemsPayload)}::jsonb)`
+		);
 
 		return { success: true };
 	} catch (err) {
-		return { success: false, error: err.message };
+		console.error("Error updating invoice:", err);
+		return { success: false, error: err.message || "Failed to update invoice" };
 	}
 }
 

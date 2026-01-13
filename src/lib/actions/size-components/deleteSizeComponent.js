@@ -1,26 +1,31 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { sizeComponent } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 /**
  * Delete a component from a recipe
  * @param {Object} params
  * @param {string} params.id - SizeComponent ID to delete
- * @returns {Object} Success/error response
+ * @returns {Promise<{success?: boolean, error?: string}>}
  */
 export const deleteSizeComponent = async ({ id }) => {
-	if (!id) {
+	// Input validation
+	if (!id || typeof id !== "string") {
 		return { error: "Component ID is required" };
 	}
 
-	const supabase = await createClient();
+	try {
+		const result = await db.delete(sizeComponent).where(eq(sizeComponent.id, id));
 
-	const { error } = await supabase.from("SizeComponent").delete().eq("id", id);
+		if (result.rowCount === 0) {
+			return { error: "Component not found" };
+		}
 
-	if (error) {
-		console.error("Error deleting size component:", error);
+		return { success: true };
+	} catch (err) {
+		console.error("Error deleting size component:", err);
 		return { error: "Failed to delete recipe component" };
 	}
-
-	return { success: true };
 };

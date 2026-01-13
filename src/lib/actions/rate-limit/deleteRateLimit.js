@@ -1,25 +1,37 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { rateLimit } from "@/db/schema";
+import { inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Delete rate limit records by identifiers
+ * @param {string[]} identifiers - Array of identifiers (email/IP) to delete
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
 export async function deleteRateLimit(identifiers) {
-	const supabase = await createClient();
-
-	if (!identifiers || identifiers.length === 0) {
+	// Input validation
+	if (!Array.isArray(identifiers) || identifiers.length === 0) {
 		return { success: false, message: "No items selected" };
 	}
 
-	try {
-		const { error } = await supabase.from("RateLimit").delete().in("identifier", identifiers);
+	// Validate all identifiers are strings
+	const safeIdentifiers = identifiers.filter((id) => typeof id === "string" && id.trim());
+	if (safeIdentifiers.length === 0) {
+		return { success: false, message: "Invalid identifiers provided" };
+	}
 
-		if (error) {
-			return { success: false, message: "Failed to delete records" };
-		}
+	try {
+		const result = await db.delete(rateLimit).where(inArray(rateLimit.identifier, safeIdentifiers));
 
 		revalidatePath("/dashboard/settings/login-attempts");
-		return { success: true, message: `Successfully deleted ${identifiers.length} record(s)` };
+		return {
+			success: true,
+			message: `Successfully deleted ${result.rowCount || safeIdentifiers.length} record(s)`,
+		};
 	} catch (err) {
+		console.error("Error deleting rate limits:", err);
 		return { success: false, message: "An unexpected error occurred" };
 	}
 }

@@ -1,21 +1,43 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { invoice } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
+// Valid status values for invoice
+const VALID_STATUSES = ["pending", "success", "canceled"];
+
+/**
+ * Update the status of an invoice
+ * @param {string} invoiceId - UUID of the invoice
+ * @param {string} status - New status value
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
 export async function updateInvoiceStatus(invoiceId, status) {
-	const supabase = await createClient();
+	// Input validation
+	if (!invoiceId || typeof invoiceId !== "string") {
+		return { success: false, error: "Invalid invoice ID" };
+	}
+
+	if (!status || !VALID_STATUSES.includes(status)) {
+		return {
+			success: false,
+			error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`,
+		};
+	}
 
 	try {
-		const { error } = await supabase.from("Invoice").update({ status }).eq("id", invoiceId);
+		const result = await db.update(invoice).set({ status }).where(eq(invoice.id, invoiceId));
 
-		if (error) {
-			throw error;
+		if (result.rowCount === 0) {
+			return { success: false, error: "Invoice not found" };
 		}
 
 		revalidatePath("/dashboard/invoices");
 		return { success: true };
 	} catch (err) {
-		return { success: false, error: err.message };
+		console.error("Error updating invoice status:", err);
+		return { success: false, error: "Failed to update invoice status" };
 	}
 }

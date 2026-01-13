@@ -1,28 +1,28 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 
 /**
  * Calculate COGS for a size price using the RPC function
  * @param {Object} params
  * @param {string} params.sizePriceId - ProductSizePrice ID
- * @returns {Object} COGS calculation result
+ * @returns {Promise<{cogs: number, error?: string}>}
  */
 export const calculateSizeCOGS = async ({ sizePriceId }) => {
-	if (!sizePriceId) {
+	// Input validation
+	if (!sizePriceId || typeof sizePriceId !== "string") {
 		return { error: "Size Price ID is required", cogs: 0 };
 	}
 
-	const supabase = await createClient();
+	try {
+		const result = await db.execute(sql`SELECT calculate_size_cogs(${sizePriceId}::uuid) as cogs`);
 
-	const { data, error } = await supabase.rpc("calculate_size_cogs", {
-		p_size_price_id: sizePriceId,
-	});
+		const cogs = result[0]?.cogs ?? result.rows?.[0]?.cogs;
 
-	if (error) {
-		console.error("Error calculating COGS:", error);
+		return { cogs: cogs || 0 };
+	} catch (err) {
+		console.error("Error calculating COGS:", err);
 		return { error: "Failed to calculate COGS", cogs: 0 };
 	}
-
-	return { cogs: data || 0 };
 };

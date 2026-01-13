@@ -1,6 +1,6 @@
 import { unauthorized } from "next/navigation";
 
-import InvoicePage from "./_components/InvoicePage";
+import InvoicePage from "./_components/list/InvoicePage";
 import { createClient } from "@/lib/actions/supabase/server";
 import { getAllInvoice } from "@/lib/actions/invoice/getAllInvoice";
 

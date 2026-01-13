@@ -1,4 +1,6 @@
-import { createServiceRoleClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { rateLimit } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // Configuration
 const MAX_ATTEMPTS = 5; // Maximum login attempts
@@ -66,61 +68,73 @@ export async function checkRateLimit(identifier) {
 	// Validate and sanitize input
 	const sanitizedIdentifier = validateIdentifier(identifier);
 
-	const supabase = createServiceRoleClient();
 	const now = Date.now();
 
-	const { data: record, error } = await supabase
-		.from("RateLimit")
-		.select("*")
-		.eq("identifier", sanitizedIdentifier)
-		.single();
+	try {
+		const [record] = await db
+			.select()
+			.from(rateLimit)
+			.where(eq(rateLimit.identifier, sanitizedIdentifier))
+			.limit(1);
 
-	// No previous attempts or error (treat error as no attempts for resilience)
-	if (!record || error) {
+		// No previous attempts
+		if (!record) {
+			return {
+				allowed: true,
+				remainingAttempts: MAX_ATTEMPTS - 1,
+				resetTime: null,
+			};
+		}
+
+		// Check if lockout period has expired
+		if (record.lockedUntil && now < record.lockedUntil) {
+			return {
+				allowed: false,
+				remainingAttempts: 0,
+				resetTime: record.lockedUntil,
+			};
+		}
+
+		// Check if window has expired
+		if (now - record.firstAttempt > WINDOW_MS) {
+			// Reset the record
+			await db.delete(rateLimit).where(eq(rateLimit.identifier, sanitizedIdentifier));
+			return {
+				allowed: true,
+				remainingAttempts: MAX_ATTEMPTS - 1,
+				resetTime: null,
+			};
+		}
+
+		// Check if max attempts reached
+		if (record.attempts >= MAX_ATTEMPTS) {
+			const lockedUntil = record.firstAttempt + LOCKOUT_MS;
+			await db
+				.update(rateLimit)
+				.set({ lockedUntil })
+				.where(eq(rateLimit.identifier, sanitizedIdentifier));
+
+			return {
+				allowed: false,
+				remainingAttempts: 0,
+				resetTime: lockedUntil,
+			};
+		}
+
+		return {
+			allowed: true,
+			remainingAttempts: MAX_ATTEMPTS - record.attempts - 1,
+			resetTime: null,
+		};
+	} catch (err) {
+		console.error("Error checking rate limit:", err);
+		// Fail open - allow the request if there's a database error
 		return {
 			allowed: true,
 			remainingAttempts: MAX_ATTEMPTS - 1,
 			resetTime: null,
 		};
 	}
-
-	// Check if lockout period has expired
-	if (record.lockedUntil && now < record.lockedUntil) {
-		return {
-			allowed: false,
-			remainingAttempts: 0,
-			resetTime: record.lockedUntil,
-		};
-	}
-
-	// Check if window has expired
-	if (now - record.firstAttempt > WINDOW_MS) {
-		// Reset the record
-		await supabase.from("RateLimit").delete().eq("identifier", sanitizedIdentifier);
-		return {
-			allowed: true,
-			remainingAttempts: MAX_ATTEMPTS - 1,
-			resetTime: null,
-		};
-	}
-
-	// Check if max attempts reached
-	if (record.attempts >= MAX_ATTEMPTS) {
-		const lockedUntil = record.firstAttempt + LOCKOUT_MS;
-		await supabase.from("RateLimit").update({ lockedUntil }).eq("identifier", sanitizedIdentifier);
-
-		return {
-			allowed: false,
-			remainingAttempts: 0,
-			resetTime: lockedUntil,
-		};
-	}
-
-	return {
-		allowed: true,
-		remainingAttempts: MAX_ATTEMPTS - record.attempts - 1,
-		resetTime: null,
-	};
 }
 
 /**
@@ -131,40 +145,43 @@ export async function recordFailedAttempt(identifier) {
 	// Validate and sanitize input
 	const sanitizedIdentifier = validateIdentifier(identifier);
 
-	const supabase = createServiceRoleClient();
 	const now = Date.now();
 
-	const { data: record } = await supabase
-		.from("RateLimit")
-		.select("*")
-		.eq("identifier", sanitizedIdentifier)
-		.single();
+	try {
+		const [record] = await db
+			.select()
+			.from(rateLimit)
+			.where(eq(rateLimit.identifier, sanitizedIdentifier))
+			.limit(1);
 
-	if (!record || now - record.firstAttempt > WINDOW_MS) {
-		// First attempt or window expired - Upsert
-		const { error: upsertError } = await supabase.from("RateLimit").upsert(
-			{
-				identifier: sanitizedIdentifier,
-				attempts: 1,
-				firstAttempt: now,
-				lockedUntil: null,
-			},
-			{
-				onConflict: "identifier", // Explicitly specify conflict column
-			}
-		);
-		if (upsertError) {
-			// Error handled silently - rate limiting continues
+		if (!record || now - record.firstAttempt > WINDOW_MS) {
+			// First attempt or window expired - Upsert
+			await db
+				.insert(rateLimit)
+				.values({
+					identifier: sanitizedIdentifier,
+					attempts: 1,
+					firstAttempt: now,
+					lockedUntil: null,
+				})
+				.onConflictDoUpdate({
+					target: rateLimit.identifier,
+					set: {
+						attempts: 1,
+						firstAttempt: now,
+						lockedUntil: null,
+					},
+				});
+		} else {
+			// Increment attempts
+			await db
+				.update(rateLimit)
+				.set({ attempts: record.attempts + 1 })
+				.where(eq(rateLimit.identifier, sanitizedIdentifier));
 		}
-	} else {
-		// Increment attempts
-		const { error: updateError } = await supabase
-			.from("RateLimit")
-			.update({ attempts: record.attempts + 1 })
-			.eq("identifier", sanitizedIdentifier);
-		if (updateError) {
-			// Error handled silently - rate limiting continues
-		}
+	} catch (err) {
+		console.error("Error recording failed attempt:", err);
+		// Silently fail - don't block the login flow
 	}
 }
 
@@ -176,6 +193,10 @@ export async function clearAttempts(identifier) {
 	// Validate and sanitize input
 	const sanitizedIdentifier = validateIdentifier(identifier);
 
-	const supabase = createServiceRoleClient();
-	await supabase.from("RateLimit").delete().eq("identifier", sanitizedIdentifier);
+	try {
+		await db.delete(rateLimit).where(eq(rateLimit.identifier, sanitizedIdentifier));
+	} catch (err) {
+		console.error("Error clearing attempts:", err);
+		// Silently fail
+	}
 }

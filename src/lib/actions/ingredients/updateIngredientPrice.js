@@ -1,49 +1,47 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 
 /**
  * Update ingredient price with audit logging via RPC transaction
- * This creates a history record and updates the price atomically
- * @param {Object} params
- * @param {string} params.id - Ingredient ID
- * @param {number} params.newPrice - New price per unit
- * @param {string} [params.reason] - Optional reason for price change
- * @returns {Object} Success/error response with history info
+ * @returns {Promise<{success?: boolean, error?: string, oldPrice?: number, newPrice?: number, historyId?: string}>}
  */
 export const updateIngredientPrice = async ({ id, newPrice, reason }) => {
 	// Input validation
-	if (!id) {
+	if (!id || typeof id !== "string") {
 		return { error: "Ingredient ID is required" };
 	}
-	const price = parseFloat(newPrice);
+	const price = Math.round(parseFloat(newPrice));
 	if (Number.isNaN(price) || price < 0) {
 		return { error: "New price must be a valid positive number" };
 	}
 
-	const supabase = await createClient();
+	// Sanitize reason
+	const safeReason = reason?.trim() || null;
 
-	// Call the transactional RPC function
-	const { data, error } = await supabase.rpc("update_ingredient_price", {
-		p_ingredient_id: id,
-		p_new_price: price,
-		p_reason: reason?.trim() || null,
-	});
+	try {
+		// Call the transactional RPC function via raw SQL
+		const result = await db.execute(
+			sql`SELECT update_ingredient_price(${id}::uuid, ${price}, ${safeReason}) as result`
+		);
 
-	if (error) {
-		console.error("Error updating ingredient price:", error);
+		// Drizzle returns array directly, not { rows: [] }
+		const data = result[0]?.result ?? result.rows?.[0]?.result;
+
+		// RPC returns JSON with success/error info
+		if (!data?.success) {
+			return { error: data?.error || "Failed to update ingredient price" };
+		}
+
+		return {
+			success: true,
+			oldPrice: data.old_price,
+			newPrice: data.new_price,
+			historyId: data.history_id,
+		};
+	} catch (err) {
+		console.error("Error updating ingredient price:", err);
 		return { error: "Failed to update ingredient price" };
 	}
-
-	// RPC returns JSON with success/error info
-	if (!data?.success) {
-		return { error: data?.error || "Failed to update ingredient price" };
-	}
-
-	return {
-		success: true,
-		oldPrice: data.old_price,
-		newPrice: data.new_price,
-		historyId: data.history_id,
-	};
 };

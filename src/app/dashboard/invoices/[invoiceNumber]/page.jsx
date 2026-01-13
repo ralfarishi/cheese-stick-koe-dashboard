@@ -1,7 +1,7 @@
 import { unauthorized } from "next/navigation";
 import { verifySession } from "@/lib/verifySession";
 
-import UpdateInvoiceForm from "../_components/UpdateInvoiceForm";
+import UpdateInvoiceForm from "../_components/form/UpdateInvoiceForm";
 
 import { getInvoiceByNumber, preloadInvoice } from "@/lib/actions/invoice/getInvoiceByNumber";
 import { createClient } from "@/lib/actions/supabase/server";

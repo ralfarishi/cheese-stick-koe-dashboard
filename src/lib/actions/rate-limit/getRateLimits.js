@@ -1,21 +1,18 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { rateLimit } from "@/db/schema";
+import { desc } from "drizzle-orm";
 
+/**
+ * Get all rate limit records for admin dashboard
+ * @returns {Promise<{data: Array, error?: string}>}
+ */
 export async function getRateLimits() {
-	const supabase = await createClient();
-
 	try {
-		const { data, error } = await supabase
-			.from("RateLimit")
-			.select("*")
-			.order("firstAttempt", { ascending: false });
+		const data = await db.select().from(rateLimit).orderBy(desc(rateLimit.firstAttempt));
 
-		if (error) {
-			return { data: [], error: error.message };
-		}
-
-		// Convert BigInt to number/string for serialization
+		// Convert BigInt to number for serialization (already handled by schema mode: 'number')
 		const formattedData = data.map((record) => ({
 			...record,
 			firstAttempt: Number(record.firstAttempt),
@@ -24,6 +21,7 @@ export async function getRateLimits() {
 
 		return { data: formattedData };
 	} catch (err) {
+		console.error("Error fetching rate limits:", err);
 		return { data: [], error: "Failed to fetch rate limits" };
 	}
 }

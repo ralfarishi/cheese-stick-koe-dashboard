@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import DeleteInvoiceModal from "./DeleteInvoiceModal";
-import InvoiceDownloadModal from "./InvoiceDownloadModal";
+import InvoiceDownloadModal from "../preview/InvoiceDownloadModal";
 
 import { getInvoiceWithItems } from "@/lib/actions/invoice/getInvoiceWithItem";
 

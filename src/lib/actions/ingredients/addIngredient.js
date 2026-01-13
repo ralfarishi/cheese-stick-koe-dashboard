@@ -1,14 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/actions/supabase/server";
+import { db } from "@/db";
+import { ingredient } from "@/db/schema";
 
 /**
  * Add a new ingredient to the database
- * @param {Object} params
- * @param {string} params.name - Ingredient name
- * @param {string} params.unit - Unit of measurement (e.g., "gr", "ml", "pcs")
- * @param {number} params.costPerUnit - Initial cost per unit
- * @returns {Object} Success/error response
+ * @returns {Promise<{success?: boolean, data?: Object, error?: string}>}
  */
 export const addIngredient = async ({ name, unit, costPerUnit }) => {
 	// Input validation
@@ -23,26 +20,33 @@ export const addIngredient = async ({ name, unit, costPerUnit }) => {
 		return { error: "Cost per unit must be a valid positive number" };
 	}
 
-	const supabase = await createClient();
+	const safeName = name.trim();
+	const safeUnit = unit.trim();
 
-	const { data, error } = await supabase
-		.from("Ingredient")
-		.insert({
-			name: name.trim(),
-			unit: unit.trim(),
-			costPerUnit: cost,
-		})
-		.select()
-		.single();
-
-	if (error) {
-		// Specific check for duplicate names (Postgres error code 23505)
-		if (error.code === "23505") {
-			return { error: `Ingredient "${name}" already exists` };
-		}
-		console.error("Error adding ingredient:", error);
-		return { error: "Failed to add ingredient" };
+	// Validate length limits
+	if (safeName.length > 255) {
+		return { error: "Ingredient name is too long (max 255 characters)" };
+	}
+	if (safeUnit.length > 50) {
+		return { error: "Unit is too long (max 50 characters)" };
 	}
 
-	return { success: true, data };
+	try {
+		const [data] = await db
+			.insert(ingredient)
+			.values({
+				name: safeName,
+				unit: safeUnit,
+				costPerUnit: cost,
+			})
+			.returning();
+
+		return { success: true, data };
+	} catch (err) {
+		if (err.code === "23505") {
+			return { error: `Ingredient "${safeName}" already exists` };
+		}
+		console.error("Error adding ingredient:", err);
+		return { error: "Failed to add ingredient" };
+	}
 };

@@ -1,6 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+/**
+ * Create Supabase client for authentication operations ONLY
+ * For database queries, use Drizzle ORM from '@/db'
+ *
+ * @returns {Promise<import('@supabase/supabase-js').SupabaseClient>}
+ */
 export async function createClient() {
 	const cookieStore = await cookies();
 
@@ -31,20 +37,8 @@ export async function createClient() {
 	);
 }
 
-export function createServiceRoleClient() {
-	const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-	if (!serviceRoleKey) {
-		throw new Error("SUPABASE_SERVICE_ROLE_KEY is not defined in environment variables");
-	}
-
-	return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey, {
-		cookies: {
-			get() {
-				return null;
-			},
-			set() {},
-			remove() {},
-		},
-	});
-}
+/**
+ * Alias for createClient - for clarity in auth operations
+ * @deprecated Use createClient() instead
+ */
+export const createAuthClient = createClient;
