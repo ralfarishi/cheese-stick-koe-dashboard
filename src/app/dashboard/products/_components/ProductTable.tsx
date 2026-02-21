@@ -2,7 +2,7 @@
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import { useQueryStates, parseAsInteger, parseAsString, debounce } from "nuqs";
 
 import type { Product, SortOrder, TableRef } from "@/lib/types";
 
@@ -27,7 +27,7 @@ interface ProductTableProps {
 
 const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTable(
 	{ products = [], totalPages = 0, totalCount = 0 },
-	ref
+	ref,
 ) {
 	const router = useRouter();
 
@@ -36,41 +36,37 @@ const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTab
 	const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
 
 	// nuqs state management - shallow: false triggers server refetch
-	const [page, setPage] = useQueryState(
-		"page",
-		parseAsInteger.withDefault(1).withOptions({ shallow: false })
-	);
-	const [query, setQuery] = useQueryState(
-		"query",
-		parseAsString.withDefault("").withOptions({ shallow: false })
-	);
-	const [sortBy, setSortBy] = useQueryState(
-		"sortBy",
-		parseAsString.withDefault("name").withOptions({ shallow: false })
-	);
-	const [sortOrder, setSortOrder] = useQueryState(
-		"sortOrder",
-		parseAsString.withDefault("asc").withOptions({ shallow: false })
+	const [params, setParams] = useQueryStates(
+		{
+			page: parseAsInteger.withDefault(1),
+			query: parseAsString.withDefault(""),
+			sortBy: parseAsString.withDefault("name"),
+			sortOrder: parseAsString.withDefault("asc"),
+		},
+		{ shallow: false },
 	);
 
+	const { page, query, sortBy, sortOrder } = params;
+
+	// Use transient state only for immediate input feedback
 	const [searchTerm, setSearchTerm] = useState<string>(query);
 
 	// Sync searchTerm when query changes (e.g., back/forward navigation)
-	useEffect(() => {
+	const [prevQuery, setPrevQuery] = useState(query);
+	if (query !== prevQuery) {
 		setSearchTerm(query);
-	}, [query]);
+		setPrevQuery(query);
+	}
 
-	// Debounced search update
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (searchTerm !== query) {
-				setQuery(searchTerm || null);
-				setPage(1);
-			}
-		}, 300);
-
-		return () => clearTimeout(timer);
-	}, [searchTerm, query, setQuery, setPage]);
+	const handleSearch = (value: string) => {
+		setSearchTerm(value);
+		setParams(
+			{ query: value || null, page: 1 },
+			{
+				limitUrlUpdates: value === "" ? undefined : debounce(300),
+			},
+		);
+	};
 
 	const handleSort = async (column: string, order?: SortOrder): Promise<void> => {
 		let newOrder: SortOrder = order || "asc";
@@ -83,11 +79,11 @@ const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTab
 			}
 		}
 
-		await Promise.all([setSortBy(column), setSortOrder(newOrder), setPage(1)]);
+		await setParams({ sortBy: column, sortOrder: newOrder, page: 1 });
 	};
 
 	const handlePageChange = async (newPage: number): Promise<void> => {
-		await setPage(newPage);
+		await setParams({ page: newPage });
 	};
 
 	useImperativeHandle(ref, () => ({
@@ -126,8 +122,9 @@ const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTab
 							type="text"
 							placeholder="Search product..."
 							value={searchTerm}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
 							className="w-full pl-10"
+							aria-label="Search products"
 						/>
 					</div>
 
@@ -256,6 +253,7 @@ const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTab
 			/>
 
 			<ProductEditModal
+				key={selectedProduct?.id}
 				open={editModalOpen}
 				onOpenChange={setEditModalOpen}
 				product={selectedProduct}

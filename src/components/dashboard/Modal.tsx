@@ -42,12 +42,14 @@ interface ModalProps {
 	buttonStyling?: string;
 }
 
+const EMPTY_FIELDS: ModalField[] = [];
+
 export default function Modal({
 	open,
 	onOpenChange,
 	title,
 	color = "default",
-	fields = [],
+	fields = EMPTY_FIELDS,
 	onSubmit,
 	submitLabel = "Submit",
 	footerButtons,

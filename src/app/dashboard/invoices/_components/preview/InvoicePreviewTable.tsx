@@ -57,7 +57,7 @@ export default function InvoicePreviewTable({
 						<TableHeader hasDiscount={hasDiscount} />
 						<tbody className="divide-y divide-gray-100">
 							{items.map((item, i) => (
-								<TableRow key={i} item={item} index={i} hasDiscount={hasDiscount} />
+								<TableRow key={item.id} item={item} index={i} hasDiscount={hasDiscount} />
 							))}
 
 							{Array.from({ length: gapRows }).map((_, idx) => (
@@ -223,14 +223,7 @@ function SummaryFooter({ subtotal, invoice, discountPercent, shippingType }: Sum
 					</span>
 				</div>
 
-				<div
-					className="wave-divider my-3"
-					style={{
-						height: "2px",
-						background: "linear-gradient(to right, transparent, #D4693C, transparent)",
-						position: "relative",
-					}}
-				></div>
+				<div className="wave-divider my-3"></div>
 
 				<div
 					className="flex justify-between items-center py-3 rounded-xl px-4"

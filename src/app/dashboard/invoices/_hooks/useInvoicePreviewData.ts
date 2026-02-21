@@ -4,6 +4,7 @@ import { getAllProducts } from "@/lib/actions/products/getAllProducts";
 import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
 
 export interface PreviewItem {
+	id: string;
 	productName: string;
 	sizeName: string;
 	quantity: number;
@@ -67,6 +68,7 @@ export function useInvoicePreviewData({
 				const quantity = item.quantity;
 
 				return {
+					id: item.id || `${item.productId}-${item.sizePriceId}`,
 					productName: product?.name || "Unknown",
 					sizeName: size?.size || "Unknown",
 					quantity,

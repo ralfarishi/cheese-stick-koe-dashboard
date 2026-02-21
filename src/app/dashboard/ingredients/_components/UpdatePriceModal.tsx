@@ -46,10 +46,14 @@ export default function UpdatePriceModal({
 	const {
 		register,
 		handleSubmit,
-		reset,
 		setValue,
 		formState: { errors },
-	} = useForm<UpdatePriceFormValues>();
+	} = useForm<UpdatePriceFormValues>({
+		defaultValues: {
+			newPrice: ingredient ? String(ingredient.costPerUnit) : "",
+			reason: "",
+		},
+	});
 
 	const [calcData, setCalcData] = useState<CalcData>({ purchasePrice: "", bulkQty: "" });
 
@@ -65,15 +69,6 @@ export default function UpdatePriceModal({
 			setValue("newPrice", unitCost, { shouldValidate: true });
 		}
 	};
-
-	useEffect(() => {
-		if (ingredient) {
-			reset({
-				newPrice: String(ingredient.costPerUnit),
-				reason: "",
-			});
-		}
-	}, [ingredient, reset]);
 
 	const onSubmit = async (data: UpdatePriceFormValues): Promise<void> => {
 		if (!ingredient) return;

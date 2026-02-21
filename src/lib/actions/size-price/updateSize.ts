@@ -21,7 +21,7 @@ interface UpdateResult {
  */
 export async function updateSize(
 	id: string,
-	{ size, price, laborPercent }: SizeUpdateInput
+	{ size, price, laborPercent }: SizeUpdateInput,
 ): Promise<UpdateResult> {
 	// Input validation
 	if (!id || typeof id !== "string") {
@@ -62,7 +62,9 @@ export async function updateSize(
 
 		return { success: true };
 	} catch (err) {
-		console.error("Error updating size:", err);
-		return { success: false, message: "Failed to update size" };
+		return {
+			success: false,
+			message: "Failed to update size price. Please try again later.",
+		};
 	}
 }

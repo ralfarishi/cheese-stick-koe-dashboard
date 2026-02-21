@@ -2,7 +2,7 @@
 
 import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import { useQueryStates, parseAsInteger, parseAsString, debounce } from "nuqs";
 
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, ChefHat, History, TrendingUp, Search, MoreHorizontal } from "lucide-react";
@@ -32,7 +32,7 @@ interface IngredientTableProps {
 
 const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function IngredientTable(
 	{ data = [], totalPages = 0, totalCount = 0 },
-	ref
+	ref,
 ) {
 	const router = useRouter();
 
@@ -43,41 +43,26 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 	const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
 
 	// nuqs state management - shallow: false triggers server refetch
-	const [page, setPage] = useQueryState(
-		"page",
-		parseAsInteger.withDefault(1).withOptions({ shallow: false })
+	const [params, setParams] = useQueryStates(
+		{
+			page: parseAsInteger.withDefault(1),
+			query: parseAsString.withDefault(""),
+			sortBy: parseAsString.withDefault("name"),
+			sortOrder: parseAsString.withDefault("asc"),
+		},
+		{ shallow: false },
 	);
-	const [query, setQuery] = useQueryState(
-		"query",
-		parseAsString.withDefault("").withOptions({ shallow: false })
-	);
-	const [sortBy, setSortBy] = useQueryState(
-		"sortBy",
-		parseAsString.withDefault("name").withOptions({ shallow: false })
-	);
-	const [sortOrder, setSortOrder] = useQueryState(
-		"sortOrder",
-		parseAsString.withDefault("asc").withOptions({ shallow: false })
-	);
+
+	const { page, query, sortBy, sortOrder } = params;
 
 	const [searchTerm, setSearchTerm] = useState<string>(query);
 
 	// Sync searchTerm when query changes (e.g., back/forward navigation)
-	useEffect(() => {
+	const [prevQuery, setPrevQuery] = useState(query);
+	if (query !== prevQuery) {
 		setSearchTerm(query);
-	}, [query]);
-
-	// Debounce search
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (searchTerm !== query) {
-				setQuery(searchTerm || null);
-				setPage(1);
-			}
-		}, 500);
-
-		return () => clearTimeout(timer);
-	}, [searchTerm, query, setQuery, setPage]);
+		setPrevQuery(query);
+	}
 
 	const handleSort = async (column: string, order?: SortOrder): Promise<void> => {
 		let newOrder: SortOrder = order || "asc";
@@ -90,15 +75,20 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 			}
 		}
 
-		await Promise.all([setSortBy(column), setSortOrder(newOrder), setPage(1)]);
+		await setParams({ sortBy: column, sortOrder: newOrder, page: 1 });
 	};
 
 	const handlePageChange = async (newPage: number): Promise<void> => {
-		await setPage(newPage);
+		await setParams({ page: newPage });
 	};
 
-	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>): void => {
-		setSearchTerm(e.target.value);
+	const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>): void => {
+		const value = e.target.value;
+		setSearchTerm(value);
+		setParams(
+			{ query: value || null, page: 1 },
+			{ limitUrlUpdates: value === "" ? undefined : debounce(500) },
+		);
 	};
 
 	useImperativeHandle(ref, () => ({
@@ -128,7 +118,8 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 								placeholder="Search ingredients..."
 								className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 w-full sm:w-64 transition-all"
 								value={searchTerm}
-								onChange={handleSearch}
+								onChange={handleSearchInput}
+								aria-label="Search ingredients"
 							/>
 						</div>
 						<AddIngredientButton
@@ -304,6 +295,7 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 			/>
 
 			<EditIngredientModal
+				key={selectedIngredient?.id}
 				open={editModalOpen}
 				onOpenChange={setEditModalOpen}
 				ingredient={selectedIngredient}
@@ -314,6 +306,7 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 			/>
 
 			<UpdatePriceModal
+				key={selectedIngredient?.id ? `price-${selectedIngredient.id}` : "price-empty"}
 				open={priceModalOpen}
 				onOpenChange={setPriceModalOpen}
 				ingredient={selectedIngredient}
@@ -324,6 +317,7 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 			/>
 
 			<PriceHistoryModal
+				key={selectedIngredient?.id ? `history-${selectedIngredient.id}` : "history-empty"}
 				open={historyModalOpen}
 				onOpenChange={setHistoryModalOpen}
 				ingredient={selectedIngredient}

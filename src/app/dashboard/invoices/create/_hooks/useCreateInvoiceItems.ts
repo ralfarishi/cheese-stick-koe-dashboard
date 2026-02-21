@@ -21,6 +21,7 @@ export interface SizeOption {
 }
 
 export interface CreateInvoiceItem {
+	id: string;
 	productId: string;
 	sizePriceId: string;
 	quantity: number;
@@ -53,6 +54,7 @@ export interface SubmitInvoiceData {
 // ============================================================================
 
 const createEmptyItem = (): CreateInvoiceItem => ({
+	id: crypto.randomUUID(),
 	productId: "",
 	sizePriceId: "",
 	quantity: 1,
@@ -75,7 +77,7 @@ interface UseCreateInvoiceItemsReturn {
 		index: number,
 		field: keyof CreateInvoiceItem | string,
 		value: string | number,
-		mode?: DiscountMode | null
+		mode?: DiscountMode | null,
 	) => void;
 	resetItems: () => void;
 	subtotal: number;
@@ -98,7 +100,7 @@ export function useCreateInvoiceItems({
 		item: CreateInvoiceItem,
 		field: keyof CreateInvoiceItem | string,
 		value: string | number,
-		mode: DiscountMode | null = null
+		mode: DiscountMode | null = null,
 	): void => {
 		if (field === "sizePriceId") {
 			const selectedSize = sizes.find((s) => s.id === value);
@@ -139,7 +141,7 @@ export function useCreateInvoiceItems({
 			index: number,
 			field: keyof CreateInvoiceItem | string,
 			value: string | number,
-			mode: DiscountMode | null = null
+			mode: DiscountMode | null = null,
 		) => {
 			setItems((prev) => {
 				const updatedItems = [...prev];
@@ -149,7 +151,7 @@ export function useCreateInvoiceItems({
 				return updatedItems;
 			});
 		},
-		[sizes]
+		[sizes],
 	);
 
 	const resetItems = useCallback(() => {

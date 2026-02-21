@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import type { Ingredient } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,7 @@ export default function IngredientCombobox({
 	disabled,
 }: IngredientComboboxProps) {
 	const [open, setOpen] = useState<boolean>(false);
+	const listboxId = useId();
 
 	const selectedIngredient = ingredients.find((i) => i.id === value);
 
@@ -39,17 +40,19 @@ export default function IngredientCombobox({
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-haspopup="listbox"
+					aria-controls={listboxId}
 					disabled={disabled}
 					className={cn(
 						"w-full justify-between h-10 px-4 rounded-xl border-gray-200 font-normal hover:bg-gray-50 transition-colors",
-						!value && "text-gray-400"
+						!value && "text-gray-400",
 					)}
 				>
 					<span className="truncate">
 						{selectedIngredient
 							? `${selectedIngredient.name} (Rp. ${formatCurrency(
-									selectedIngredient.costPerUnit
-							  )}/${selectedIngredient.unit})`
+									selectedIngredient.costPerUnit,
+								)}/${selectedIngredient.unit})`
 							: "Search ingredient..."}
 					</span>
 					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -64,7 +67,7 @@ export default function IngredientCombobox({
 							className="h-11 outline-none focus:ring-0 border-none"
 						/>
 					</div>
-					<CommandList className="max-h-[300px] overflow-y-auto">
+					<CommandList id={listboxId} className="max-h-[300px] overflow-y-auto">
 						<CommandEmpty>No ingredient found.</CommandEmpty>
 						<CommandGroup>
 							{ingredients.map((ing) => (
@@ -80,7 +83,7 @@ export default function IngredientCombobox({
 									<Check
 										className={cn(
 											"h-4 w-4 text-[#8B2E1F]",
-											value === ing.id ? "opacity-100" : "opacity-0"
+											value === ing.id ? "opacity-100" : "opacity-0",
 										)}
 									/>
 									<div className="flex flex-col">

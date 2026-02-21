@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useTransition } from "react";
 import type { InvoiceStatus } from "@/lib/types";
 import { toast } from "sonner";
 import StatusCombobox from "./StatusCombobox";
@@ -12,38 +12,34 @@ interface InlineStatusUpdateProps {
 }
 
 export default function InlineStatusUpdate({ invoiceId, currentStatus }: InlineStatusUpdateProps) {
-	const [status, setStatus] = useState<InvoiceStatus>(currentStatus);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [isPending, startTransition] = useTransition();
+	const [optimisticStatus, setOptimisticStatus] = useOptimistic(
+		currentStatus,
+		(state: InvoiceStatus, newStatus: InvoiceStatus) => newStatus,
+	);
 
 	const handleStatusChange = async (newStatus: InvoiceStatus): Promise<void> => {
-		if (newStatus === status) return;
+		if (newStatus === optimisticStatus) return;
 
-		// Optimistic update
-		const previousStatus = status;
-		setStatus(newStatus);
-		setIsLoading(true);
+		startTransition(async () => {
+			setOptimisticStatus(newStatus);
+			try {
+				const result = await updateInvoiceStatus(invoiceId, newStatus);
 
-		try {
-			const result = await updateInvoiceStatus(invoiceId, newStatus);
-
-			if (result.success) {
-				toast.success("Status updated successfully");
-			} else {
-				// Revert on failure
-				setStatus(previousStatus);
-				toast.error(result.error || "Failed to update status");
+				if (result.success) {
+					toast.success("Status updated successfully");
+				} else {
+					toast.error(result.error || "Failed to update status");
+				}
+			} catch {
+				toast.error("An error occurred while updating status");
 			}
-		} catch {
-			setStatus(previousStatus);
-			toast.error("An error occurred while updating status");
-		} finally {
-			setIsLoading(false);
-		}
+		});
 	};
 
 	return (
 		<div className="w-[140px]">
-			<StatusCombobox value={status} onChange={handleStatusChange} disabled={isLoading} />
+			<StatusCombobox value={optimisticStatus} onChange={handleStatusChange} disabled={isPending} />
 		</div>
 	);
 }

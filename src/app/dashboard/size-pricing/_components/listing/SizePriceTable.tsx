@@ -27,7 +27,7 @@ interface SizePriceTableProps {
 
 const SizePriceTable = forwardRef<TableRef, SizePriceTableProps>(function SizePriceTable(
 	{ data = [], totalPages = 0, totalCount = 0 },
-	ref
+	ref,
 ) {
 	const router = useRouter();
 
@@ -39,15 +39,15 @@ const SizePriceTable = forwardRef<TableRef, SizePriceTableProps>(function SizePr
 	// nuqs state management - URL as source of truth, shallow: false triggers server refetch
 	const [page, setPage] = useQueryState(
 		"page",
-		parseAsInteger.withDefault(1).withOptions({ shallow: false })
+		parseAsInteger.withDefault(1).withOptions({ shallow: false }),
 	);
 	const [sortBy, setSortBy] = useQueryState(
 		"sortBy",
-		parseAsString.withDefault("size").withOptions({ shallow: false })
+		parseAsString.withDefault("size").withOptions({ shallow: false }),
 	);
 	const [sortOrder, setSortOrder] = useQueryState(
 		"sortOrder",
-		parseAsString.withDefault("asc").withOptions({ shallow: false })
+		parseAsString.withDefault("asc").withOptions({ shallow: false }),
 	);
 
 	// Sync selectedSize if data updates in background
@@ -232,6 +232,7 @@ const SizePriceTable = forwardRef<TableRef, SizePriceTableProps>(function SizePr
 			/>
 
 			<EditSizeModal
+				key={selectedSize?.id}
 				open={editModalOpen}
 				onOpenChange={setEditModalOpen}
 				data={selectedSize}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import { useQueryStates, parseAsInteger, parseAsString, debounce } from "nuqs";
 
 import type { Invoice, InvoiceItem, SortOrder, TableRef } from "@/lib/types";
 
@@ -30,7 +30,7 @@ interface InvoicesTableProps {
 
 const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function InvoicesTable(
 	{ invoices = [], totalPages = 0, totalCount = 0 },
-	ref
+	ref,
 ) {
 	const router = useRouter();
 
@@ -40,45 +40,45 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 	const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
 
 	// nuqs state management - shallow: false triggers server refetch
-	const [page, setPage] = useQueryState(
-		"page",
-		parseAsInteger.withDefault(1).withOptions({ shallow: false })
-	);
-	const [query, setQuery] = useQueryState(
-		"query",
-		parseAsString.withDefault("").withOptions({ shallow: false })
-	);
-	const [sortOrder, setSortOrder] = useQueryState(
-		"sortOrder",
-		parseAsString.withDefault("desc").withOptions({ shallow: false })
+	const [params, setParams] = useQueryStates(
+		{
+			page: parseAsInteger.withDefault(1),
+			query: parseAsString.withDefault(""),
+			sortOrder: parseAsString.withDefault("desc"),
+		},
+		{ shallow: false },
 	);
 
+	const { page, query, sortOrder } = params;
+
+	// Use transient state only for immediate input feedback
 	const [searchTerm, setSearchTerm] = useState<string>(query);
 
 	// Sync searchTerm when query changes (e.g., back/forward navigation)
-	useEffect(() => {
+	// We check in render to avoid useEffect cascading renders
+	const [prevQuery, setPrevQuery] = useState(query);
+	if (query !== prevQuery) {
 		setSearchTerm(query);
-	}, [query]);
+		setPrevQuery(query);
+	}
 
-	// Debounced search update
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (searchTerm !== query) {
-				setQuery(searchTerm || null);
-				setPage(1);
-			}
-		}, 300);
-
-		return () => clearTimeout(timer);
-	}, [searchTerm, query, setQuery, setPage]);
+	const handleSearch = (value: string) => {
+		setSearchTerm(value);
+		setParams(
+			{ query: value || null, page: 1 },
+			{
+				limitUrlUpdates: value === "" ? undefined : debounce(300),
+			},
+		);
+	};
 
 	const handleSort = async (): Promise<void> => {
 		const newOrder: SortOrder = sortOrder === "asc" ? "desc" : "asc";
-		await Promise.all([setSortOrder(newOrder), setPage(1)]);
+		await setParams({ sortOrder: newOrder, page: 1 });
 	};
 
 	const handlePageChange = async (newPage: number): Promise<void> => {
-		await setPage(newPage);
+		await setParams({ page: newPage });
 	};
 
 	useImperativeHandle(ref, () => ({
@@ -125,8 +125,9 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 							type="text"
 							placeholder="Search by name or invoice number..."
 							value={searchTerm}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
 							className="w-full pl-10"
+							aria-label="Search invoices"
 						/>
 					</div>
 

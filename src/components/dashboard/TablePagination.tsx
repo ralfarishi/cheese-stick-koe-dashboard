@@ -40,11 +40,7 @@ export function TablePagination({
 	}
 
 	return (
-		<nav
-			role="navigation"
-			aria-label="Pagination"
-			className="px-6 py-4 bg-gray-50 border-t border-gray-200"
-		>
+		<nav aria-label="Pagination" className="px-6 py-4 bg-gray-50 border-t border-gray-200">
 			<div className="flex items-center justify-between flex-wrap gap-3">
 				{/* Items count */}
 				<p className="text-sm text-gray-600">

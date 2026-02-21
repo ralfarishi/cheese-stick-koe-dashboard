@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useReducer, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import type { User } from "@supabase/supabase-js";
 
-import { supabaseBrowser } from "@/lib/actions/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -25,26 +24,65 @@ import {
 interface CreateInvoicePageProps {
 	products: ProductOption[];
 	sizes: SizeOption[];
+	lastInvoiceNumber: string | null;
+	user: User;
 }
 
+type InvoiceState = {
+	invoiceDate: string;
+	shippingPrice: number;
+	isLoading: boolean;
+	discountMode: "amount" | "percent";
+	discountInput: number;
+};
+
+type InvoiceAction =
+	| { type: "SET_DATE"; payload: string }
+	| { type: "SET_SHIPPING"; payload: number }
+	| { type: "SET_LOADING"; payload: boolean }
+	| { type: "SET_DISCOUNT_MODE"; payload: "amount" | "percent" }
+	| { type: "SET_DISCOUNT_INPUT"; payload: number }
+	| { type: "RESET_STATE" };
+
+const invoiceReducer = (state: InvoiceState, action: InvoiceAction): InvoiceState => {
+	switch (action.type) {
+		case "SET_DATE":
+			return { ...state, invoiceDate: action.payload };
+		case "SET_SHIPPING":
+			return { ...state, shippingPrice: action.payload };
+		case "SET_LOADING":
+			return { ...state, isLoading: action.payload };
+		case "SET_DISCOUNT_MODE":
+			return { ...state, discountMode: action.payload };
+		case "SET_DISCOUNT_INPUT":
+			return { ...state, discountInput: action.payload };
+		case "RESET_STATE":
+			return {
+				...state,
+				invoiceDate: new Date().toISOString(),
+				shippingPrice: 0,
+				discountInput: 0,
+			};
+		default:
+			return state;
+	}
+};
+
 export default function CreateInvoicePage({
-	products: initialProducts,
-	sizes: initialSizes,
+	products,
+	sizes,
+	lastInvoiceNumber,
+	user,
 }: CreateInvoicePageProps) {
-	const supabase = supabaseBrowser();
-	const [user, setUser] = useState<User | null>(null);
+	const [state, dispatch] = useReducer(invoiceReducer, {
+		invoiceDate: new Date().toISOString(),
+		shippingPrice: 0,
+		isLoading: false,
+		discountMode: "amount",
+		discountInput: 0,
+	});
 
-	const [products] = useState<ProductOption[]>(initialProducts || []);
-	const [sizes] = useState<SizeOption[]>(initialSizes || []);
-
-	const [invoiceDate, setInvoiceDate] = useState<string>(new Date().toISOString());
-	const [lastInvoiceNumber, setLastInvoiceNumber] = useState<string | null>(null);
-	const [shippingPrice, setShippingPrice] = useState<number>(0);
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-
-	// General discount state
-	const [discountMode, setDiscountMode] = useState<"amount" | "percent">("amount");
-	const [discountInput, setDiscountInput] = useState<number>(0);
+	const { invoiceDate, shippingPrice, isLoading, discountMode, discountInput } = state;
 
 	const {
 		control,
@@ -70,30 +108,9 @@ export default function CreateInvoicePage({
 	} = useCreateInvoiceItems({ sizes });
 
 	const resetForm = () => {
-		setInvoiceDate(new Date().toISOString());
-		setShippingPrice(0);
-		setDiscountInput(0);
+		dispatch({ type: "RESET_STATE" });
 		resetItems();
 	};
-
-	useEffect(() => {
-		const fetchInitialData = async () => {
-			const [{ data: userData }, { data: lastInvoice }] = await Promise.all([
-				supabase.auth.getUser(),
-				supabase
-					.from("Invoice")
-					.select("invoiceNumber, invoiceDate")
-					.order("invoiceDate", { ascending: false })
-					.limit(1)
-					.single(),
-			]);
-
-			if (userData?.user) setUser(userData.user);
-			if (lastInvoice) setLastInvoiceNumber(lastInvoice.invoiceNumber);
-		};
-
-		fetchInitialData();
-	}, [supabase]);
 
 	// Calculate discount based on items total
 	const discountAmount =
@@ -125,7 +142,7 @@ export default function CreateInvoicePage({
 			return;
 		}
 
-		setIsLoading(true);
+		dispatch({ type: "SET_LOADING", payload: true });
 
 		try {
 			const res = await submitInvoice({
@@ -162,7 +179,7 @@ export default function CreateInvoicePage({
 		} catch {
 			toast.error("Something went wrong");
 		} finally {
-			setIsLoading(false);
+			dispatch({ type: "SET_LOADING", payload: false });
 		}
 	};
 
@@ -177,7 +194,7 @@ export default function CreateInvoicePage({
 							control={control}
 							errors={errors}
 							invoiceDate={invoiceDate}
-							setInvoiceDate={setInvoiceDate}
+							setInvoiceDate={(val: string) => dispatch({ type: "SET_DATE", payload: val })}
 							lastInvoiceNumber={lastInvoiceNumber}
 						/>
 
@@ -195,11 +212,15 @@ export default function CreateInvoicePage({
 							errors={errors}
 							subtotal={subtotal}
 							shippingPrice={shippingPrice}
-							setShippingPrice={setShippingPrice}
+							setShippingPrice={(val: number) => dispatch({ type: "SET_SHIPPING", payload: val })}
 							discountMode={discountMode}
-							setDiscountMode={setDiscountMode}
+							setDiscountMode={(val: "amount" | "percent") =>
+								dispatch({ type: "SET_DISCOUNT_MODE", payload: val })
+							}
 							discountInput={discountInput}
-							setDiscountInput={setDiscountInput}
+							setDiscountInput={(val: number) =>
+								dispatch({ type: "SET_DISCOUNT_INPUT", payload: val })
+							}
 							discountAmount={discountAmount}
 							discountPercent={discountPercent}
 							totalPrice={totalPrice}

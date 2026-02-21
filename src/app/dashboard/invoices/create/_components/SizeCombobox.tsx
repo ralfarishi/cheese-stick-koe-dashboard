@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +29,7 @@ interface SizeComboboxProps {
 
 export default function SizeCombobox({ sizes, value, onChange }: SizeComboboxProps) {
 	const [open, setOpen] = useState<boolean>(false);
+	const listboxId = useId();
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -37,6 +38,8 @@ export default function SizeCombobox({ sizes, value, onChange }: SizeComboboxPro
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-haspopup="listbox"
+					aria-controls={listboxId}
 					className="w-full justify-between"
 				>
 					{value ? sizes.find((s) => s.id === value)?.size : "Choose size..."}
@@ -46,7 +49,7 @@ export default function SizeCombobox({ sizes, value, onChange }: SizeComboboxPro
 			<PopoverContent className="w-full p-0">
 				<Command>
 					<CommandInput placeholder="Search size..." />
-					<CommandList>
+					<CommandList id={listboxId}>
 						<CommandEmpty>Size not found</CommandEmpty>
 						<CommandGroup>
 							{sizes.map((s) => (

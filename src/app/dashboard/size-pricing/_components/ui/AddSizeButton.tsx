@@ -23,6 +23,7 @@ export default function AddSizeButton({ onSizeAdded }: AddSizeButtonProps) {
 				Add Size
 			</Button>
 			<AddSizeModal
+				key={open ? "open" : "closed"}
 				open={open}
 				setOpen={setOpen}
 				onSuccess={() => {

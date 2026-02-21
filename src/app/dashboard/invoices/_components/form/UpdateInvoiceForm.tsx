@@ -15,10 +15,6 @@ import BasicInfoSection from "./BasicInfoSection";
 import ItemsSection from "./ItemsSection";
 import SummarySection from "./SummarySection";
 
-export const metadata = {
-	title: getPageTitle("Invoice Edit"),
-};
-
 // Base interfaces for minimal type compatibility
 interface ProductBase {
 	id: string;
@@ -47,13 +43,13 @@ interface UpdateInvoiceFormProps {
 	sizesData?: SizeBase[];
 }
 
+const EMPTY_ARRAY: any[] = [];
+
 export default function UpdateInvoiceForm({
 	invoice,
-	productsData = [],
-	sizesData = [],
+	productsData = EMPTY_ARRAY,
+	sizesData = EMPTY_ARRAY,
 }: UpdateInvoiceFormProps) {
-	const [products] = useState<ProductBase[]>(productsData);
-
 	const {
 		form,
 		isPending,
@@ -107,7 +103,7 @@ export default function UpdateInvoiceForm({
 
 						<ItemsSection
 							items={items}
-							products={products}
+							products={productsData}
 							sizes={sizesData}
 							onItemChange={handleItemChange}
 							onRemove={removeItem}

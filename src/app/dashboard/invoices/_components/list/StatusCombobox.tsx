@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import type { InvoiceStatus } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ interface StatusComboboxProps {
 
 export default function StatusCombobox({ value, onChange, disabled }: StatusComboboxProps) {
 	const [open, setOpen] = useState<boolean>(false);
+	const listboxId = useId();
 
 	const selected = statuses.find((s) => s.value === value);
 
@@ -47,10 +48,12 @@ export default function StatusCombobox({ value, onChange, disabled }: StatusComb
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-haspopup="listbox"
+					aria-controls={listboxId}
 					disabled={disabled}
 					className={cn(
 						"w-full justify-between px-3",
-						selected && getStatusVariant(selected.value)
+						selected && getStatusVariant(selected.value),
 					)}
 				>
 					{selected ? (
@@ -67,7 +70,7 @@ export default function StatusCombobox({ value, onChange, disabled }: StatusComb
 			<PopoverContent className="w-full p-0">
 				<Command>
 					<CommandInput placeholder="Search status..." />
-					<CommandList>
+					<CommandList id={listboxId}>
 						<CommandEmpty>Status not found</CommandEmpty>
 						<CommandGroup>
 							{statuses.map((s) => (
@@ -87,7 +90,7 @@ export default function StatusCombobox({ value, onChange, disabled }: StatusComb
 									<Check
 										className={cn(
 											"ml-auto h-4 w-4",
-											value === s.value ? "opacity-100" : "opacity-0"
+											value === s.value ? "opacity-100" : "opacity-0",
 										)}
 									/>
 								</CommandItem>

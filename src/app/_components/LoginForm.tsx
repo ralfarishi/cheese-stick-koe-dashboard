@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { ChevronRight, Eye, EyeClosed, LoaderCircle, Lock } from "lucide-react";
-import InteractiveBackground from "./InteractiveBackground";
 
 interface LoginFormValues {
 	email: string;
@@ -59,7 +58,6 @@ export default function LoginForm() {
 
 	return (
 		<div className="min-h-screen w-full bg-[#FCF9F1] flex items-center justify-center p-6 relative overflow-hidden selection:bg-[#8B2E1F]/10">
-			<InteractiveBackground />
 			<div className="relative z-10 w-full max-w-5xl">
 				<form
 					onSubmit={handleSubmit(onSubmit)}
@@ -90,7 +88,10 @@ export default function LoginForm() {
 
 							<div className="space-y-8">
 								<div className="space-y-3">
-									<label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B2E1F]/50 px-1">
+									<label
+										htmlFor="email"
+										className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B2E1F]/50 px-1"
+									>
 										Email
 									</label>
 									<Controller
@@ -101,6 +102,7 @@ export default function LoginForm() {
 											<div className="relative group">
 												<Input
 													{...field}
+													id="email"
 													type="email"
 													placeholder="user@mail.com"
 													className="h-14 px-6 border-2 border-[#FCF9F1] bg-[#FCF9F1]/80 rounded-2xl focus:bg-white focus:border-[#8B2E1F] focus:ring-0 transition-all duration-300 text-[#2D2424] font-bold placeholder:text-gray-300 shadow-none outline-none"
@@ -112,7 +114,10 @@ export default function LoginForm() {
 								</div>
 
 								<div className="space-y-3">
-									<label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B2E1F]/50 px-1">
+									<label
+										htmlFor="password"
+										className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8B2E1F]/50 px-1"
+									>
 										Access Key
 									</label>
 									<Controller
@@ -123,6 +128,7 @@ export default function LoginForm() {
 											<div className="relative group">
 												<Input
 													{...field}
+													id="password"
 													type={showPassword ? "text" : "password"}
 													placeholder="••••••••"
 													className="h-14 px-6 border-2 border-[#FCF9F1] bg-[#FCF9F1]/80 rounded-2xl focus:bg-white focus:border-[#8B2E1F] focus:ring-0 transition-all duration-300 text-[#2D2424] font-bold placeholder:text-gray-300 shadow-none outline-none"
@@ -132,6 +138,7 @@ export default function LoginForm() {
 													type="button"
 													onClick={() => setShowPassword(!showPassword)}
 													className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-200 hover:text-[#8B2E1F] transition-colors"
+													aria-label={showPassword ? "Hide password" : "Show password"}
 												>
 													{showPassword ? (
 														<EyeClosed className="w-5 h-5" />
@@ -172,9 +179,9 @@ export default function LoginForm() {
 					<div className="hidden md:flex w-full md:w-64 bg-[#FCF9F1] border-2 border-[#8B2E1F]/35 p-8 rounded-[1.5rem] shadow-[32px_32px_64px_-16px_rgba(139,46,31,0.05)] md:translate-y-[60px] animate-item-enter md:delay-200 flex-col justify-between min-h-[120px] md:min-h-[200px]">
 						<div className="space-y-4">
 							<div className="flex gap-1">
-								{[...Array(3)].map((_, i) => (
-									<div key={i} className="w-2 h-2 rounded-full bg-[#8B2E1F]/20" />
-								))}
+								<div className="w-2 h-2 rounded-full bg-[#8B2E1F]/20" />
+								<div className="w-2 h-2 rounded-full bg-[#8B2E1F]/20" />
+								<div className="w-2 h-2 rounded-full bg-[#8B2E1F]/20" />
 							</div>
 							<p className="text-[10px] font-black text-[#8B2E1F]/40 uppercase tracking-[0.25em] leading-relaxed">
 								System Version <br /> LTS 2.0.1

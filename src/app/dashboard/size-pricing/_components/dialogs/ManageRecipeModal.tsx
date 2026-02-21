@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback, useReducer } from "react";
 import { toast } from "sonner";
 import type { ProductSizePrice, Ingredient, SizeComponent } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,43 +28,117 @@ interface RecipeComponentWithIngredient extends SizeComponent {
 	calculatedCost?: number;
 }
 
-export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRecipeModalProps) {
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [isSaving, setIsSaving] = useState<boolean>(false);
-	const [components, setComponents] = useState<RecipeComponentWithIngredient[]>([]);
-	const [allIngredients, setAllIngredients] = useState<Ingredient[]>([]);
-	const [totalCOGS, setTotalCOGS] = useState<number>(0);
+type RecipeState = {
+	isLoading: boolean;
+	isSaving: boolean;
+	isUpdatingLabor: boolean;
+	components: RecipeComponentWithIngredient[];
+	allIngredients: Ingredient[];
+	totalCOGS: number;
+	selectedIngredientId: string;
+	quantity: string;
+	laborPercent: number;
+};
 
-	// Form state for adding new ingredient
-	const [selectedIngredientId, setSelectedIngredientId] = useState<string>("");
-	const [quantity, setQuantity] = useState<string>("");
-	const [laborPercent, setLaborPercent] = useState<number>(size?.laborPercent || 0);
-	const [isUpdatingLabor, setIsUpdatingLabor] = useState<boolean>(false);
+type RecipeAction =
+	| { type: "SET_LOADING"; payload: boolean }
+	| { type: "SET_SAVING"; payload: boolean }
+	| { type: "SET_UPDATING_LABOR"; payload: boolean }
+	| {
+			type: "FETCH_SUCCESS";
+			payload: {
+				components: RecipeComponentWithIngredient[];
+				allIngredients: Ingredient[];
+				totalCOGS: number;
+			};
+	  }
+	| { type: "SET_INGREDIENT_ID"; payload: string }
+	| { type: "SET_QUANTITY"; payload: string }
+	| { type: "SET_LABOR_PERCENT"; payload: number }
+	| { type: "RESET_FORM" };
+
+const recipeReducer = (state: RecipeState, action: RecipeAction): RecipeState => {
+	switch (action.type) {
+		case "SET_LOADING":
+			return { ...state, isLoading: action.payload };
+		case "SET_SAVING":
+			return { ...state, isSaving: action.payload };
+		case "SET_UPDATING_LABOR":
+			return { ...state, isUpdatingLabor: action.payload };
+		case "FETCH_SUCCESS":
+			return {
+				...state,
+				components: action.payload.components,
+				allIngredients: action.payload.allIngredients,
+				totalCOGS: action.payload.totalCOGS,
+			};
+		case "SET_INGREDIENT_ID":
+			return { ...state, selectedIngredientId: action.payload };
+		case "SET_QUANTITY":
+			return { ...state, quantity: action.payload };
+		case "SET_LABOR_PERCENT":
+			return { ...state, laborPercent: action.payload };
+		case "RESET_FORM":
+			return { ...state, selectedIngredientId: "", quantity: "" };
+		default:
+			return state;
+	}
+};
+
+export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRecipeModalProps) {
+	const [state, dispatch] = useReducer(recipeReducer, {
+		isLoading: false,
+		isSaving: false,
+		isUpdatingLabor: false,
+		components: [],
+		allIngredients: [],
+		totalCOGS: 0,
+		selectedIngredientId: "",
+		quantity: "",
+		laborPercent: size?.laborPercent || 0,
+	});
+
+	const {
+		isLoading,
+		isSaving,
+		isUpdatingLabor,
+		components,
+		allIngredients,
+		totalCOGS,
+		selectedIngredientId,
+		quantity,
+		laborPercent,
+	} = state;
 
 	const fetchData = useCallback(async () => {
 		if (!size) return;
 
-		setIsLoading(true);
+		dispatch({ type: "SET_LOADING", payload: true });
 		try {
 			const [compResult, ingResult] = await Promise.all([
 				getComponentsBySizePrice({ sizePriceId: size.id }),
 				getAllIngredients({ limit: 100 }),
 			]);
 
-			setComponents((compResult.data as RecipeComponentWithIngredient[]) || []);
-			setTotalCOGS(compResult.totalCOGS || 0);
-			setAllIngredients(ingResult.data || []);
+			dispatch({
+				type: "FETCH_SUCCESS",
+				payload: {
+					components: (compResult.data as RecipeComponentWithIngredient[]) || [],
+					allIngredients: ingResult.data || [],
+					totalCOGS: compResult.totalCOGS || 0,
+				},
+			});
 		} catch {
 			toast.error("Failed to load recipe data");
 		} finally {
-			setIsLoading(false);
+			dispatch({ type: "SET_LOADING", payload: false });
 		}
 	}, [size]);
 
 	useEffect(() => {
 		if (open && size) {
 			fetchData();
-			setLaborPercent(size.laborPercent || 0);
+			dispatch({ type: "SET_LABOR_PERCENT", payload: size.laborPercent || 0 });
 		}
 	}, [open, size, fetchData]);
 
@@ -74,7 +148,7 @@ export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRe
 			return;
 		}
 
-		setIsSaving(true);
+		dispatch({ type: "SET_SAVING", payload: true });
 		try {
 			const result = await upsertSizeComponent({
 				sizePriceId: size.id,
@@ -86,14 +160,13 @@ export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRe
 				toast.error(result.error);
 			} else {
 				toast.success("Ingredient added to recipe");
-				setSelectedIngredientId("");
-				setQuantity("");
+				dispatch({ type: "RESET_FORM" });
 				fetchData();
 			}
 		} catch {
 			toast.error("Failed to add component");
 		} finally {
-			setIsSaving(false);
+			dispatch({ type: "SET_SAVING", payload: false });
 		}
 	};
 
@@ -115,8 +188,8 @@ export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRe
 		if (!size) return;
 
 		const newPercent = parseFloat(val) || 0;
-		setLaborPercent(newPercent);
-		setIsUpdatingLabor(true);
+		dispatch({ type: "SET_LABOR_PERCENT", payload: newPercent });
+		dispatch({ type: "SET_UPDATING_LABOR", payload: true });
 		try {
 			const result = await updateSize(size.id, {
 				size: size.size,
@@ -129,7 +202,7 @@ export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRe
 		} catch {
 			toast.error("An error occurred while updating labor");
 		} finally {
-			setIsUpdatingLabor(false);
+			dispatch({ type: "SET_UPDATING_LABOR", payload: false });
 		}
 	};
 
@@ -172,9 +245,11 @@ export default function ManageRecipeModal({ open, onOpenChange, size }: ManageRe
 						<AddIngredientForm
 							allIngredients={allIngredients}
 							selectedIngredientId={selectedIngredientId}
-							setSelectedIngredientId={setSelectedIngredientId}
+							setSelectedIngredientId={(val: string) =>
+								dispatch({ type: "SET_INGREDIENT_ID", payload: val })
+							}
 							quantity={quantity}
-							setQuantity={setQuantity}
+							setQuantity={(val: string) => dispatch({ type: "SET_QUANTITY", payload: val })}
 							onAdd={handleAddComponent}
 							isSaving={isSaving}
 							isLoading={isLoading}

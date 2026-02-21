@@ -68,13 +68,3 @@ export async function logout(): Promise<AuthResult | never> {
 	revalidatePath("/", "layout");
 	redirect("/");
 }
-
-export async function getSession() {
-	const supabase = await createClient();
-
-	const {
-		data: { session },
-	} = await supabase.auth.getSession();
-
-	return session;
-}

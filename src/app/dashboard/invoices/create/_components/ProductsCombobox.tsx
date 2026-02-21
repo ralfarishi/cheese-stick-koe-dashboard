@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,7 @@ interface ProductComboboxProps {
 
 export default function ProductCombobox({ products, value, onChange }: ProductComboboxProps) {
 	const [open, setOpen] = useState<boolean>(false);
+	const listboxId = useId();
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
@@ -36,6 +37,8 @@ export default function ProductCombobox({ products, value, onChange }: ProductCo
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}
+					aria-haspopup="listbox"
+					aria-controls={listboxId}
 					className="w-full justify-between"
 				>
 					{value ? products.find((p) => p.id === value)?.name : "Choose item..."}
@@ -45,7 +48,7 @@ export default function ProductCombobox({ products, value, onChange }: ProductCo
 			<PopoverContent className="w-full p-0">
 				<Command>
 					<CommandInput placeholder="Search item..." />
-					<CommandList>
+					<CommandList id={listboxId}>
 						<CommandEmpty>Item not found</CommandEmpty>
 						<CommandGroup>
 							{products.map((product) => (
@@ -64,7 +67,7 @@ export default function ProductCombobox({ products, value, onChange }: ProductCo
 									<Check
 										className={cn(
 											"ml-auto h-4 w-4",
-											value === product.id ? "opacity-100" : "opacity-0"
+											value === product.id ? "opacity-100" : "opacity-0",
 										)}
 									/>
 								</CommandItem>

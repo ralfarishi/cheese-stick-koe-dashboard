@@ -32,12 +32,6 @@ export async function createClient(): Promise<SupabaseClient> {
 					}
 				},
 			},
-		}
+		},
 	);
 }
-
-/**
- * Alias for createClient - for clarity in auth operations
- * @deprecated Use createClient() instead
- */
-export const createAuthClient = createClient;

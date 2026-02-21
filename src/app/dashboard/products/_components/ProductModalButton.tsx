@@ -24,6 +24,7 @@ export default function ProductModalButton({ onProductAdded }: ProductModalButto
 				Add Product
 			</Button>
 			<ProductModal
+				key={open ? "open" : "closed"}
 				open={open}
 				setOpen={setOpen}
 				onSuccess={() => {

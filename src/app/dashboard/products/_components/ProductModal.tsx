@@ -34,12 +34,7 @@ export default function ProductModal({ open, setOpen, onSuccess }: ProductModalP
 		},
 	});
 
-	// Reset form when modal opens/closes
-	useEffect(() => {
-		if (open) {
-			reset({ name: "", description: "" });
-		}
-	}, [open, reset]);
+	// Reset form state is now handled by key={open} in the parent component
 
 	const sanitize = (str: string): string => {
 		return str

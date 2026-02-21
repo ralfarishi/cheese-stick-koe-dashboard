@@ -16,7 +16,7 @@ interface ItemsSectionProps {
 		index: number,
 		field: keyof CreateInvoiceItem | string,
 		value: string | number,
-		mode?: DiscountMode | null
+		mode?: DiscountMode | null,
 	) => void;
 	onRemove: (index: number) => void;
 	onAdd: () => void;
@@ -48,7 +48,7 @@ export default function ItemsSection({
 				<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 					{items.map((item, index) => (
 						<InvoiceItemCard
-							key={index}
+							key={item.id}
 							item={item}
 							index={index}
 							itemsLength={items.length}

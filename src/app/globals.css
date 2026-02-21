@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Pattaya&family=Poppins:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -207,5 +208,87 @@ button {
 }
 .animate-item-enter {
 	animation: item-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Sidebar Specific Styles */
+@keyframes sidebar-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-sidebar-fade-in {
+	animation: sidebar-fade-in 0.3s ease-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+	width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+	background: #f4c7a8;
+	border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+	background: #e5b599;
+}
+
+/* Invoice Preview Specific Styles */
+.invoice-content {
+	font-family: "Poppins", var(--font-poppins), sans-serif;
+	background: #ffffff;
+}
+
+.thanks-msg {
+	font-family: "Pattaya", var(--font-pattaya), cursive;
+}
+
+.gradient-border {
+	position: relative;
+	background: white;
+	border: 3px solid #8b2e1f;
+}
+
+.card-shadow {
+	box-shadow: 0 10px 40px rgba(107, 29, 29, 0.15);
+}
+
+.decorative-dot {
+	width: 8px;
+	height: 8px;
+	background: #d4693c;
+	border-radius: 50%;
+	display: inline-block;
+	margin: 0 8px;
+}
+
+.wave-divider {
+	height: 2px;
+	background: linear-gradient(90deg, transparent, #d4693c, transparent);
+	position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		animation-delay: -1ms !important;
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		background-attachment: initial !important;
+		scroll-behavior: auto !important;
+		transition-duration: 0s !important;
+		transition-delay: 0s !important;
+	}
 }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { ProductSizePrice } from "@/lib/types";
@@ -32,11 +31,7 @@ export default function AddSizeModal({ open, setOpen, onSuccess }: AddSizeModalP
 		},
 	});
 
-	useEffect(() => {
-		if (open) {
-			reset({ size: "", price: "" });
-		}
-	}, [open, reset]);
+	// Reset form state is now handled by key={open} in the parent component
 
 	const sanitize = (str: string): string => {
 		if (typeof str !== "string") return str;

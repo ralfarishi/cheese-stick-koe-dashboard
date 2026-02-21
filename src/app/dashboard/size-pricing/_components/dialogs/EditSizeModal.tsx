@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { ProductSizePrice } from "@/lib/types";
 
 import { DialogFooter } from "@/components/ui/dialog";
@@ -21,15 +21,8 @@ interface EditSizeModalProps {
 }
 
 export default function EditSizeModal({ open, onOpenChange, data, onSuccess }: EditSizeModalProps) {
-	const [size, setSize] = useState<string>("");
-	const [price, setPrice] = useState<string>("");
-
-	useEffect(() => {
-		if (data) {
-			setSize(data.size || "");
-			setPrice(String(data.price) || "");
-		}
-	}, [data]);
+	const [size, setSize] = useState<string>(data?.size || "");
+	const [price, setPrice] = useState<string>(data?.price ? String(data.price) : "");
 
 	const handleUpdate = async (): Promise<void> => {
 		if (!data) return;
@@ -55,10 +48,14 @@ export default function EditSizeModal({ open, onOpenChange, data, onSuccess }: E
 		>
 			<div className="space-y-4 py-4">
 				<div className="space-y-2">
-					<label className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1">
+					<label
+						htmlFor="edit-size-name"
+						className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1"
+					>
 						Size Name
 					</label>
 					<Input
+						id="edit-size-name"
 						placeholder="Size name"
 						value={size}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSize(e.target.value)}
@@ -66,10 +63,14 @@ export default function EditSizeModal({ open, onOpenChange, data, onSuccess }: E
 					/>
 				</div>
 				<div className="space-y-2">
-					<label className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1">
+					<label
+						htmlFor="edit-size-price"
+						className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1"
+					>
 						Price
 					</label>
 					<Input
+						id="edit-size-price"
 						placeholder="Price"
 						type="number"
 						value={price}

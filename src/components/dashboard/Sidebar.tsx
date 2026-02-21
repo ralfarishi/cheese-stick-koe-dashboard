@@ -103,40 +103,6 @@ export function Sidebar() {
 
 	return (
 		<>
-			<style jsx>{`
-				@keyframes sidebar-fade-in {
-					from {
-						opacity: 0;
-						transform: translateY(-10px);
-					}
-					to {
-						opacity: 1;
-						transform: translateY(0);
-					}
-				}
-
-				.animate-sidebar-fade-in {
-					animation: sidebar-fade-in 0.3s ease-out;
-				}
-
-				.custom-scrollbar::-webkit-scrollbar {
-					width: 6px;
-				}
-
-				.custom-scrollbar::-webkit-scrollbar-track {
-					background: transparent;
-				}
-
-				.custom-scrollbar::-webkit-scrollbar-thumb {
-					background: #f4c7a8;
-					border-radius: 3px;
-				}
-
-				.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-					background: #e5b599;
-				}
-			`}</style>
-
 			{/* Mobile Burger Button */}
 			<button
 				onClick={() => setOpen(!open)}
@@ -152,8 +118,16 @@ export function Sidebar() {
 			{/* Overlay for mobile */}
 			{open && (
 				<div
+					role="button"
+					tabIndex={0}
+					aria-label="Close sidebar"
 					className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
 					onClick={() => setOpen(false)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							setOpen(false);
+						}
+					}}
 				/>
 			)}
 
@@ -171,7 +145,7 @@ export function Sidebar() {
 
 					<div className="relative flex items-center justify-between">
 						<div className="flex items-center gap-3">
-							<div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+							<div className="hidden md:flex w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl items-center justify-center">
 								<FileText className="w-6 h-6 text-white" />
 							</div>
 							<div>

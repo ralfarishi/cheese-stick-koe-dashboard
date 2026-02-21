@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useOptimistic, useTransition, ReactNode } from "react";
 import { toast } from "sonner";
 import { deleteRateLimit } from "@/lib/actions/rate-limit/deleteRateLimit";
 import { formatLockoutTime } from "@/lib/utils";
@@ -29,9 +29,13 @@ interface LoginAttemptsListProps {
 
 export default function LoginAttemptsList({ initialData }: LoginAttemptsListProps) {
 	const router = useRouter();
-	const [data, setData] = useState<LoginAttemptItem[]>(initialData);
+	const [optimisticData, removeOptimistically] = useOptimistic(
+		initialData,
+		(state: LoginAttemptItem[], identifiers: string[]) =>
+			state.filter((item) => !identifiers.includes(item.identifier)),
+	);
 	const [selected, setSelected] = useState<Set<string>>(new Set());
-	const [isDeleting, setIsDeleting] = useState<boolean>(false);
+	const [isPending, startTransition] = useTransition();
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
 
 	const toggleSelect = (identifier: string): void => {
@@ -45,10 +49,10 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 	};
 
 	const toggleSelectAll = (): void => {
-		if (selected.size === data.length) {
+		if (selected.size === optimisticData.length) {
 			setSelected(new Set());
 		} else {
-			setSelected(new Set(data.map((item) => item.identifier)));
+			setSelected(new Set(optimisticData.map((item) => item.identifier)));
 		}
 	};
 
@@ -58,25 +62,22 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 	};
 
 	const confirmDelete = async (): Promise<void> => {
-		setIsDeleting(true);
 		const identifiers = Array.from(selected);
-
-		const previousData = [...data];
-		setData(data.filter((item) => !selected.has(item.identifier)));
-		setSelected(new Set());
 		setIsDeleteDialogOpen(false);
 
-		const result = await deleteRateLimit(identifiers);
+		startTransition(async () => {
+			removeOptimistically(identifiers);
+			setSelected(new Set());
 
-		if (result.success) {
-			toast.success(result.message);
-			router.refresh();
-		} else {
-			toast.error(result.message);
-			// Revert on failure
-			setData(previousData);
-		}
-		setIsDeleting(false);
+			const result = await deleteRateLimit(identifiers);
+
+			if (result.success) {
+				toast.success(result.message);
+				router.refresh();
+			} else {
+				toast.error(result.message);
+			}
+		});
 	};
 
 	const formatDate = (timestamp: number | null): string => {
@@ -84,7 +85,7 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 		return new Date(timestamp).toLocaleString();
 	};
 
-	const getLockoutStatus = (item: LoginAttemptItem): React.ReactNode => {
+	const getLockoutStatus = (item: LoginAttemptItem): ReactNode => {
 		const now = Date.now();
 		if (item.lockedUntil && item.lockedUntil > now) {
 			return (
@@ -100,7 +101,7 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 		);
 	};
 
-	if (data.length === 0) {
+	if (optimisticData.length === 0) {
 		return (
 			<div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
 				<div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -121,7 +122,7 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 						onClick={toggleSelectAll}
 						className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
 					>
-						{selected.size === data.length && data.length > 0 ? (
+						{selected.size === optimisticData.length && optimisticData.length > 0 ? (
 							<CheckSquare className="w-5 h-5 text-[#8B2E1F]" />
 						) : (
 							<Square className="w-5 h-5 text-gray-400" />
@@ -134,10 +135,10 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 				{selected.size > 0 && (
 					<button
 						onClick={handleDeleteClick}
-						disabled={isDeleting}
+						disabled={isPending}
 						className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
 					>
-						{isDeleting ? (
+						{isPending ? (
 							<RefreshCcw className="w-4 h-4 animate-spin" />
 						) : (
 							<Trash2 className="w-4 h-4" />
@@ -162,7 +163,7 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-gray-100">
-							{data.map((item) => (
+							{optimisticData.map((item: LoginAttemptItem) => (
 								<tr
 									key={item.identifier}
 									className={`hover:bg-gray-50 transition-colors ${
@@ -213,7 +214,7 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 						<Button
 							variant="outline"
 							onClick={() => setIsDeleteDialogOpen(false)}
-							disabled={isDeleting}
+							disabled={isPending}
 							className="w-full sm:w-auto"
 						>
 							Cancel
@@ -221,10 +222,10 @@ export default function LoginAttemptsList({ initialData }: LoginAttemptsListProp
 						<Button
 							variant="destructive"
 							onClick={confirmDelete}
-							disabled={isDeleting}
+							disabled={isPending}
 							className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
 						>
-							{isDeleting ? (
+							{isPending ? (
 								<>
 									<RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
 									Deleting...

@@ -83,8 +83,8 @@ export default function InvoicePreviewSkeleton({
 								</div>
 							</div>
 							<div className="p-4 space-y-4">
-								{[1, 2, 3, 4, 5].map((i) => (
-									<div key={i} className="grid grid-cols-6 gap-4">
+								{["row-1", "row-2", "row-3", "row-4", "row-5"].map((rowId) => (
+									<div key={rowId} className="grid grid-cols-6 gap-4">
 										<Skeleton className="h-4 w-full" />
 										<Skeleton className="h-4 w-full" />
 										<Skeleton className="h-4 w-full" />

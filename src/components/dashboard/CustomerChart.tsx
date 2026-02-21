@@ -2,19 +2,18 @@
 
 import { useEffect, useState, ReactNode } from "react";
 
-import {
-	BarChart,
-	Bar,
-	XAxis,
-	YAxis,
-	Tooltip,
-	ResponsiveContainer,
-	CartesianGrid,
-	Cell,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { Loader2, TrendingUp, Users, Calendar, BarChart3 } from "lucide-react";
-
 import { getCustomerStats } from "@/lib/actions/invoice/getCustomerStats";
+
+const CustomerChartInner = dynamic(() => import("./CustomerChartInner"), {
+	ssr: false,
+	loading: () => (
+		<div className="flex items-center justify-center h-[320px] bg-gray-50/50 rounded-xl animate-pulse">
+			<Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+		</div>
+	),
+});
 
 interface SelectProps {
 	value: string;
@@ -45,7 +44,18 @@ const Select = ({ value, onValueChange, children }: SelectProps) => {
 
 			{open && (
 				<>
-					<div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+					<div
+						role="button"
+						tabIndex={0}
+						aria-label="Close year selector"
+						className="fixed inset-0 z-10"
+						onClick={() => setOpen(false)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								setOpen(false);
+							}
+						}}
+					/>
 					<div className="absolute right-0 mt-2 w-full bg-white border-2 border-gray-200 rounded-xl shadow-xl z-20 overflow-hidden">
 						{children}
 					</div>
@@ -69,31 +79,6 @@ const SelectItem = ({ value, children, onSelect }: SelectItemProps) => (
 		{children}
 	</button>
 );
-
-interface TooltipPayload {
-	payload: { month: string };
-	value: number;
-}
-
-interface CustomTooltipProps {
-	active?: boolean;
-	payload?: TooltipPayload[];
-}
-
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
-	if (active && payload && payload.length) {
-		return (
-			<div className="bg-slate-100 border-2 border-[#8B2E1F] rounded-xl shadow-xl p-4">
-				<p className="text-sm font-semibold text-gray-700 mb-1">{payload[0].payload.month}</p>
-				<p className="text-lg font-bold text-[#8B2E1F] flex items-center gap-2">
-					<Users className="w-4 h-4" />
-					{payload[0].value} Customers
-				</p>
-			</div>
-		);
-	}
-	return null;
-};
 
 interface MonthlyData {
 	month: string;
@@ -133,7 +118,7 @@ export default function CustomerChart({ initialData }: CustomerChartProps) {
 	const avgCustomers = data.length > 0 ? (totalCustomers / data.length).toFixed(1) : "0";
 	const maxMonth = data.reduce(
 		(max, item) => (item.totalCustomer > max.totalCustomer ? item : max),
-		data[0] || { month: "-", totalCustomer: 0 }
+		data[0] || { month: "-", totalCustomer: 0 },
 	);
 
 	const getBarColor = (value: number): string => {
@@ -232,41 +217,7 @@ export default function CustomerChart({ initialData }: CustomerChartProps) {
 				) : (
 					<div className="overflow-x-auto">
 						<div className="min-w-[700px]">
-							<ResponsiveContainer width="100%" height={320}>
-								<BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-									<defs>
-										<linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="0%" stopColor="#8B2E1F" stopOpacity={1} />
-											<stop offset="100%" stopColor="#D4693C" stopOpacity={1} />
-										</linearGradient>
-									</defs>
-									<CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-									<XAxis
-										dataKey="month"
-										tick={{ fill: "#6b7280", fontSize: 12, fontWeight: 600 }}
-										axisLine={{ stroke: "#d1d5db" }}
-									/>
-									<YAxis
-										domain={[0, "auto"]}
-										tick={{ fill: "#6b7280", fontSize: 12, fontWeight: 600 }}
-										axisLine={{ stroke: "#d1d5db" }}
-									/>
-									<Tooltip
-										content={<CustomTooltip />}
-										cursor={{ fill: "rgba(139, 46, 31, 0.1)" }}
-									/>
-									<Bar
-										dataKey="totalCustomer"
-										fill="url(#barGradient)"
-										radius={[8, 8, 0, 0]}
-										maxBarSize={50}
-									>
-										{data.map((entry, index) => (
-											<Cell key={`cell-${index}`} fill={getBarColor(entry.totalCustomer)} />
-										))}
-									</Bar>
-								</BarChart>
-							</ResponsiveContainer>
+							<CustomerChartInner data={data} getBarColor={getBarColor} />
 						</div>
 					</div>
 				)}

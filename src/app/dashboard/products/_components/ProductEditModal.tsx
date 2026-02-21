@@ -26,15 +26,8 @@ export default function ProductEditModal({
 	product,
 	onSuccess,
 }: ProductEditModalProps) {
-	const [name, setName] = useState<string>("");
-	const [description, setDescription] = useState<string>("");
-
-	useEffect(() => {
-		if (product) {
-			setName(product.name || "");
-			setDescription(product.description || "");
-		}
-	}, [product]);
+	const [name, setName] = useState<string>(product?.name || "");
+	const [description, setDescription] = useState<string>(product?.description || "");
 
 	const handleUpdate = async (): Promise<void> => {
 		if (!product) return;
@@ -60,10 +53,14 @@ export default function ProductEditModal({
 		>
 			<div className="space-y-4 py-4">
 				<div className="space-y-2">
-					<label className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1">
+					<label
+						htmlFor="edit-product-name"
+						className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1"
+					>
 						Product Name
 					</label>
 					<Input
+						id="edit-product-name"
 						placeholder="Product name"
 						value={name}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
@@ -71,10 +68,14 @@ export default function ProductEditModal({
 					/>
 				</div>
 				<div className="space-y-2">
-					<label className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1">
+					<label
+						htmlFor="edit-product-description"
+						className="text-[10px] font-bold uppercase tracking-widest text-[#8B2E1F]/60 px-1"
+					>
 						Description
 					</label>
 					<Input
+						id="edit-product-description"
 						placeholder="Description"
 						value={description}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}

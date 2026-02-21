@@ -33,18 +33,13 @@ export default function EditIngredientModal({
 	const {
 		register,
 		handleSubmit,
-		reset,
 		formState: { errors },
-	} = useForm<EditIngredientFormValues>();
-
-	useEffect(() => {
-		if (ingredient) {
-			reset({
-				name: ingredient.name,
-				unit: ingredient.unit,
-			});
-		}
-	}, [ingredient, reset]);
+	} = useForm<EditIngredientFormValues>({
+		defaultValues: {
+			name: ingredient?.name || "",
+			unit: ingredient?.unit || "",
+		},
+	});
 
 	const onSubmit = async (data: EditIngredientFormValues): Promise<void> => {
 		if (!ingredient) return;

@@ -24,7 +24,12 @@ export default function AddIngredientButton({ onSuccess }: AddIngredientButtonPr
 				Add Ingredient
 			</Button>
 
-			<AddIngredientModal open={open} onOpenChange={setOpen} onSuccess={onSuccess} />
+			<AddIngredientModal
+				key={open ? "open" : "closed"}
+				open={open}
+				onOpenChange={setOpen}
+				onSuccess={onSuccess}
+			/>
 		</>
 	);
 }

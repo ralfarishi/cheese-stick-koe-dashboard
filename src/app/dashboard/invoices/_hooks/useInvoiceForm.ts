@@ -7,6 +7,7 @@ import { updateInvoice } from "@/lib/actions/invoice/updateInvoice";
 import { calculateDiscountAmount } from "@/lib/utils";
 
 export interface InvoiceFormItem {
+	id: string;
 	productId: string;
 	sizePriceId: string;
 	quantity: number;
@@ -71,7 +72,7 @@ export interface UseInvoiceFormReturn {
 		index: number,
 		field: string,
 		value: string | number,
-		mode?: DiscountMode | null
+		mode?: DiscountMode | null,
 	) => void;
 	addItem: () => void;
 	removeItem: (index: number) => void;
@@ -102,7 +103,7 @@ export function useInvoiceForm({
 	const [items, setItems] = useState<InvoiceFormItem[]>([]);
 	const [shippingPrice, setShippingPrice] = useState<number>(invoice.shipping || 0);
 	const [status, setStatus] = useState<InvoiceStatus>(
-		(invoice.status as InvoiceStatus) || "pending"
+		(invoice.status as InvoiceStatus) || "pending",
 	);
 
 	const [discountMode, setDiscountMode] = useState<DiscountMode>("amount");
@@ -120,13 +121,14 @@ export function useInvoiceForm({
 	// Initialize items from invoice
 	useEffect(() => {
 		if (invoice?.items?.length) {
-			const mappedItems: InvoiceFormItem[] = invoice.items.map((item) => {
+			const mappedItems: InvoiceFormItem[] = invoice.items.map((item, idx) => {
 				const quantity = item.quantity || 0;
 				const price = item.sizePrice?.price || 0;
 				const subtotal = quantity * price;
 				const discountAmount = item.discountAmount || 0;
 
 				return {
+					id: `item-${idx}-${Date.now()}`,
 					productId: item.productId,
 					sizePriceId: item.sizePriceId,
 					quantity,
@@ -175,7 +177,7 @@ export function useInvoiceForm({
 			index: number,
 			field: string,
 			value: string | number,
-			mode: DiscountMode | null = null
+			mode: DiscountMode | null = null,
 		): void => {
 			setItems((prevItems) => {
 				const updatedItems = [...prevItems];
@@ -218,13 +220,14 @@ export function useInvoiceForm({
 				return updatedItems;
 			});
 		},
-		[sizes]
+		[sizes],
 	);
 
 	const addItem = useCallback((): void => {
 		setItems((prev) => [
 			...prev,
 			{
+				id: `item-new-${Date.now()}-${Math.random()}`,
 				productId: "",
 				sizePriceId: "",
 				price: 0,
