@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 interface UpdateSessionResult {
 	response: NextResponse;
-	session: Session | null;
+	user: any; // Using any for now to match the payload, will refine if necessary
 }
 
 export async function updateSession(request: NextRequest): Promise<UpdateSessionResult> {
@@ -58,14 +58,14 @@ export async function updateSession(request: NextRequest): Promise<UpdateSession
 					});
 				},
 			},
-		}
+		},
 	);
 
-	// Refresh session if expired
+	// Refresh session if expired and verify user securely
 	const {
-		data: { session },
-	} = await supabase.auth.getSession();
+		data: { user },
+	} = await supabase.auth.getUser();
 
-	return { response, session };
+	return { response, user };
 }
 

@@ -8,9 +8,9 @@ import { invoice } from "@/db/schema";
 import { desc } from "drizzle-orm";
 
 export default async function Page() {
-	const session = await verifySession();
+	const user = await verifySession();
 
-	if (!session) {
+	if (!user) {
 		unauthorized();
 	}
 
@@ -29,7 +29,7 @@ export default async function Page() {
 			products={products || []}
 			sizes={sizes || []}
 			lastInvoiceNumber={lastInvoice?.invoiceNumber || null}
-			user={session.user}
+			user={user}
 		/>
 	);
 }

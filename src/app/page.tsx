@@ -5,15 +5,16 @@ import { createClient } from "@/lib/actions/supabase/server";
 import LoginForm from "./_components/LoginForm";
 
 export default async function LoginPage() {
-  const supabase = await createClient();
+	const supabase = await createClient();
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
 
-  if (session) {
-    redirect("/dashboard");
-  }
+	if (user) {
+		redirect("/dashboard");
+	}
 
-  return <LoginForm />;
+	return <LoginForm />;
 }
+

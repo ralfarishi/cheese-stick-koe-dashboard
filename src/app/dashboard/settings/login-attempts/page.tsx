@@ -10,9 +10,9 @@ export const metadata = {
 };
 
 export default async function LoginAttemptsPage() {
-	const session = await verifySession();
+	const user = await verifySession();
 
-	if (!session) {
+	if (!user) {
 		unauthorized();
 	}
 

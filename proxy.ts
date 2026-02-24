@@ -2,7 +2,7 @@ import { updateSession } from "@/lib/actions/supabase/middleware";
 import { NextResponse, NextRequest } from "next/server";
 
 export default async function proxy(request: NextRequest) {
-	const { response, session } = await updateSession(request);
+	const { response, user } = await updateSession(request);
 	const { pathname } = request.nextUrl;
 
 	const isLoginPage = pathname === "/";
@@ -10,13 +10,13 @@ export default async function proxy(request: NextRequest) {
 
 	// If login success
 	// Redirect authenticated users from login page to dashboard
-	if (session && isLoginPage) {
+	if (user && isLoginPage) {
 		return NextResponse.redirect(new URL("/dashboard", request.url));
 	}
 
 	// If not login
 	// Redirect unauthenticated users from dashboard to login
-	if (!session && isDashboard) {
+	if (!user && isDashboard) {
 		return NextResponse.redirect(new URL("/", request.url));
 	}
 

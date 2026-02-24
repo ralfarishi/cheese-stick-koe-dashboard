@@ -19,9 +19,9 @@ interface PageProps {
 }
 
 export default async function page({ searchParams }: PageProps) {
-	const session = await verifySession();
+	const user = await verifySession();
 
-	if (!session) {
+	if (!user) {
 		unauthorized();
 	}
 

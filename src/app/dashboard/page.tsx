@@ -29,10 +29,10 @@ export default async function Dashboard() {
 	const supabase = await createClient();
 
 	const {
-		data: { session },
-	} = await supabase.auth.getSession();
+		data: { user },
+	} = await supabase.auth.getUser();
 
-	if (!session) {
+	if (!user) {
 		unauthorized();
 	}
 
@@ -279,7 +279,7 @@ export default async function Dashboard() {
 										</p>
 										<span
 											className={`text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1 sm:py-1.5 inline-flex items-center rounded-full ${getStatusVariant(
-												inv.status
+												inv.status,
 											)}`}
 										>
 											{toTitleCase(inv.status)}
