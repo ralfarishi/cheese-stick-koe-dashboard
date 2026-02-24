@@ -65,7 +65,7 @@ export default function InvoiceDownloadModal({
 
 		try {
 			await document.fonts.ready;
-			await new Promise((r) => setTimeout(r, 200));
+			await new Promise((r) => setTimeout(r, 500));
 
 			const formattedName = `Invoice-${invoice.invoiceNumber}_${
 				invoice.buyerName

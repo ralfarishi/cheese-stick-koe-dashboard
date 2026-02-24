@@ -21,7 +21,7 @@ export default function CreateInvoiceHeader() {
 			{/* Page Title */}
 			<div className="bg-[#8B2E1F] rounded-2xl p-6 md:p-8 shadow-xl">
 				<div className="flex items-center gap-4">
-					<div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+					<div className="hidden md:flex w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl items-center justify-center">
 						<Receipt className="w-8 h-8 text-white" />
 					</div>
 					<div>

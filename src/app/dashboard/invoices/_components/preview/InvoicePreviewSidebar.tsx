@@ -90,7 +90,10 @@ export default function InvoicePreviewSidebar({ invoice }: InvoicePreviewSidebar
 			{/* Thank You Message */}
 			<div className="text-center py-5">
 				<div className="inline-block">
-					<div className="thanks-msg text-3xl font-bold text-amber-800 uppercase tracking-wide">
+					<div
+						className="thanks-msg text-3xl font-bold text-amber-800 uppercase tracking-wide"
+						style={{ fontFamily: "'Pattaya', var(--font-pattaya), cursive" }}
+					>
 						Terima Kasih
 					</div>
 					<div className="flex justify-center mt-2 gap-1">

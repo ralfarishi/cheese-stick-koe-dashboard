@@ -40,6 +40,9 @@ const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
 					className={`invoice-content ${
 						isDownloadVersion ? "w-[1080px]" : "w-full md:w-[1080px] md:p-8"
 					}`}
+					style={{
+						fontFamily: "'Poppins', var(--font-poppins), sans-serif",
+					}}
 				>
 					<div
 						className="gradient-border card-shadow rounded-[20px] overflow-hidden"
