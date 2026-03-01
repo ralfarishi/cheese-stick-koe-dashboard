@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, forwardRef, useImperativeHandle, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryStates, parseAsInteger, parseAsString, debounce } from "nuqs";
 
@@ -33,6 +33,7 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 	ref,
 ) {
 	const router = useRouter();
+	const [isLoading, startTransition] = useTransition();
 
 	const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -46,7 +47,7 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 			query: parseAsString.withDefault(""),
 			sortOrder: parseAsString.withDefault("desc"),
 		},
-		{ shallow: false },
+		{ shallow: false, startTransition },
 	);
 
 	const { page, query, sortOrder } = params;
@@ -54,8 +55,6 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 	// Use transient state only for immediate input feedback
 	const [searchTerm, setSearchTerm] = useState<string>(query);
 
-	// Sync searchTerm when query changes (e.g., back/forward navigation)
-	// We check in render to avoid useEffect cascading renders
 	const [prevQuery, setPrevQuery] = useState(query);
 	if (query !== prevQuery) {
 		setSearchTerm(query);

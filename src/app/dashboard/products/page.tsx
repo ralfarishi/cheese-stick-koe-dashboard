@@ -1,7 +1,7 @@
 import { unauthorized } from "next/navigation";
 
 import { getPageTitle } from "@/lib/utils";
-import { createClient } from "@/lib/actions/supabase/server";
+import { verifySession } from "@/lib/verifySession";
 
 import ProductPage from "./ProductPage";
 
@@ -21,17 +21,12 @@ interface PageProps {
 }
 
 export default async function Page({ searchParams }: PageProps) {
-	const supabase = await createClient();
-
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
+	const [user, params] = await Promise.all([verifySession(), searchParams]);
 
 	if (!user) {
 		unauthorized();
 	}
 
-	const params = await searchParams;
 	const page = Number(params?.page) || 1;
 	const query = params?.query || "";
 	const sortOrder = params?.sortOrder || "asc";

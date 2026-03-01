@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, forwardRef, useImperativeHandle, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryStates, parseAsInteger, parseAsString, debounce } from "nuqs";
 
@@ -30,6 +30,7 @@ const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTab
 	ref,
 ) {
 	const router = useRouter();
+	const [isLoading, startTransition] = useTransition();
 
 	const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -43,7 +44,7 @@ const ProductTable = forwardRef<TableRef, ProductTableProps>(function ProductTab
 			sortBy: parseAsString.withDefault("name"),
 			sortOrder: parseAsString.withDefault("asc"),
 		},
-		{ shallow: false },
+		{ shallow: false, startTransition },
 	);
 
 	const { page, query, sortBy, sortOrder } = params;

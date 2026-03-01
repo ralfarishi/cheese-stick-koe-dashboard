@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import { useQueryStates, parseAsInteger, parseAsString } from "nuqs";
 
 import type { ProductSizePrice, SortOrder, TableRef } from "@/lib/types";
 
@@ -30,6 +30,7 @@ const SizePriceTable = forwardRef<TableRef, SizePriceTableProps>(function SizePr
 	ref,
 ) {
 	const router = useRouter();
+	const [isLoading, startTransition] = useTransition();
 
 	const [selectedSize, setSelectedSize] = useState<ProductSizePrice | null>(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -37,18 +38,16 @@ const SizePriceTable = forwardRef<TableRef, SizePriceTableProps>(function SizePr
 	const [recipeModalOpen, setRecipeModalOpen] = useState<boolean>(false);
 
 	// nuqs state management - URL as source of truth, shallow: false triggers server refetch
-	const [page, setPage] = useQueryState(
-		"page",
-		parseAsInteger.withDefault(1).withOptions({ shallow: false }),
+	const [params, setParams] = useQueryStates(
+		{
+			page: parseAsInteger.withDefault(1),
+			sortBy: parseAsString.withDefault("size"),
+			sortOrder: parseAsString.withDefault("asc"),
+		},
+		{ shallow: false, startTransition },
 	);
-	const [sortBy, setSortBy] = useQueryState(
-		"sortBy",
-		parseAsString.withDefault("size").withOptions({ shallow: false }),
-	);
-	const [sortOrder, setSortOrder] = useQueryState(
-		"sortOrder",
-		parseAsString.withDefault("asc").withOptions({ shallow: false }),
-	);
+
+	const { page, sortBy, sortOrder } = params;
 
 	// Sync selectedSize if data updates in background
 	useEffect(() => {
@@ -69,11 +68,11 @@ const SizePriceTable = forwardRef<TableRef, SizePriceTableProps>(function SizePr
 			}
 		}
 
-		await Promise.all([setSortBy(column), setSortOrder(newOrder), setPage(1)]);
+		await setParams({ sortBy: column, sortOrder: newOrder, page: 1 });
 	};
 
 	const handlePageChange = async (newPage: number): Promise<void> => {
-		await setPage(newPage);
+		await setParams({ page: newPage });
 	};
 
 	useImperativeHandle(ref, () => ({

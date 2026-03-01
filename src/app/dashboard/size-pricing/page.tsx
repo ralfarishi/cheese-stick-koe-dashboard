@@ -19,13 +19,12 @@ interface PageProps {
 }
 
 export default async function page({ searchParams }: PageProps) {
-	const user = await verifySession();
+	const [user, params] = await Promise.all([verifySession(), searchParams]);
 
 	if (!user) {
 		unauthorized();
 	}
 
-	const params = await searchParams;
 	const page = Number(params?.page) || 1;
 	const sortOrder = params?.sortOrder || "asc";
 	const sortBy = params?.sortBy || "size";

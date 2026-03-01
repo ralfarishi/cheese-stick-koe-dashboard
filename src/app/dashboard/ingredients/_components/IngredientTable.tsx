@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
+import { useState, forwardRef, useImperativeHandle, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryStates, parseAsInteger, parseAsString, debounce } from "nuqs";
 
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, ChefHat, History, TrendingUp, Search, MoreHorizontal } from "lucide-react";
 import { formatDateTime, formatCurrency } from "@/lib/utils";
-import SortIcon from "@/components/dashboard/SortIcon";
 import AddIngredientButton from "./AddIngredientButton";
 import EditIngredientModal from "./EditIngredientModal";
 import DeleteIngredientModal from "./DeleteIngredientModal";
@@ -35,6 +34,7 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 	ref,
 ) {
 	const router = useRouter();
+	const [isLoading, startTransition] = useTransition();
 
 	const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -50,7 +50,7 @@ const IngredientTable = forwardRef<TableRef, IngredientTableProps>(function Ingr
 			sortBy: parseAsString.withDefault("name"),
 			sortOrder: parseAsString.withDefault("asc"),
 		},
-		{ shallow: false },
+		{ shallow: false, startTransition },
 	);
 
 	const { page, query, sortBy, sortOrder } = params;
