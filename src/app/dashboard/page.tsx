@@ -24,6 +24,9 @@ export const metadata = {
 };
 
 import { getCustomerStats } from "@/lib/actions/invoice/getCustomerStats";
+import { getTopProducts } from "@/lib/actions/dashboard/getTopProducts";
+import { getTopBuyers } from "@/lib/actions/dashboard/getTopBuyers";
+import TopPerformers from "./_components/TopPerformers";
 
 export default async function Dashboard() {
 	const supabase = await createClient();
@@ -44,6 +47,8 @@ export default async function Dashboard() {
 		{ data: statsData, error: statsError },
 		{ count: totalProducts },
 		customerStats,
+		topProducts,
+		topBuyers,
 	] = await Promise.all([
 		supabase
 			.from("Invoice")
@@ -56,6 +61,8 @@ export default async function Dashboard() {
 		supabase.from("Product").select("*", { count: "exact", head: true }),
 
 		getCustomerStats(currentYear),
+		getTopProducts(5),
+		getTopBuyers(5),
 	]);
 
 	if (statsError) {
@@ -68,6 +75,7 @@ export default async function Dashboard() {
 		paidInvoices: 0,
 		unpaidInvoices: 0,
 		totalCustomers: 0,
+		averageOrderValue: 0,
 	};
 
 	const {
@@ -76,6 +84,7 @@ export default async function Dashboard() {
 		paidInvoices: invoicesSuccess,
 		unpaidInvoices: invoicesUnpaid,
 		totalCustomers,
+		averageOrderValue,
 	} = stats;
 
 	return (
@@ -221,9 +230,30 @@ export default async function Dashboard() {
 							<p className="text-3xl font-bold text-gray-900">{totalCustomers}</p>
 						</div>
 					</div>
+
+					{/* Average Order Value (AOV) */}
+					<div className="group relative bg-white rounded-2xl p-6 border border-gray-100 hover:border-indigo-500 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+						<div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full"></div>
+						<div className="relative">
+							<div className="flex items-center justify-between mb-4">
+								<div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+									<Wallet className="w-6 h-6 text-white" />
+								</div>
+								<div className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full flex items-center gap-1">
+									Avg
+								</div>
+							</div>
+							<h3 className="text-sm font-medium text-gray-600 mb-1">Avg. Order Value</h3>
+							<p className="text-3xl font-bold text-gray-900">
+								Rp {averageOrderValue.toLocaleString("id-ID")}
+							</p>
+						</div>
+					</div>
 				</div>
 
 				<CustomerChart initialData={customerStats} />
+
+				<TopPerformers topProducts={topProducts} topBuyers={topBuyers} />
 
 				{/* Latest Invoices Section */}
 				<div className="bg-white rounded-3xl p-5 sm:p-8 shadow-lg border border-gray-100">
