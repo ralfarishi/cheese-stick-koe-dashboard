@@ -53,12 +53,13 @@ export default async function Dashboard() {
 		supabase
 			.from("Invoice")
 			.select("id, invoiceNumber, buyerName, totalPrice, status")
+			.eq("userId", user.id)
 			.order("invoiceDate", { ascending: false })
 			.limit(5),
 
-		supabase.rpc("get_dashboard_stats"),
+		supabase.rpc("get_dashboard_stats", { p_user_id: user.id }),
 
-		supabase.from("Product").select("*", { count: "exact", head: true }),
+		supabase.from("Product").select("*", { count: "exact", head: true }).eq("userId", user.id),
 
 		getCustomerStats(currentYear),
 		getTopProducts(5),

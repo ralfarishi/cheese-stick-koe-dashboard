@@ -3,7 +3,8 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { invoice, product, productSizePrice } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, and } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 import type { InvoiceWithItems, ActionResult } from "@/lib/types";
 
 interface ProductData {
@@ -19,6 +20,7 @@ interface SizePriceData {
 
 interface InvoiceItemWithDetails {
 	id: string;
+	userId: string;
 	invoiceId: string;
 	productId: string;
 	sizePriceId: string;
@@ -47,9 +49,14 @@ export const getInvoiceByNumber = cache(
 		}
 
 		try {
+			const user = await verifySession();
+			if (!user) {
+				return { error: "Unauthorized" };
+			}
+
 			// Get invoice with items using relational query
 			const result = await db.query.invoice.findFirst({
-				where: eq(invoice.invoiceNumber, safeInvoiceNumber),
+				where: and(eq(invoice.invoiceNumber, safeInvoiceNumber), eq(invoice.userId, user.id)),
 				with: {
 					items: true,
 				},
@@ -103,7 +110,7 @@ export const getInvoiceByNumber = cache(
 		} catch {
 			return { error: "Failed to fetch invoice" };
 		}
-	}
+	},
 );
 
 export const preloadInvoice = async (invoiceNumber: string): Promise<void> => {

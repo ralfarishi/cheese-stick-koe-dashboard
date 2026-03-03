@@ -34,6 +34,7 @@ export const invoiceItem = pgTable("InvoiceItem", {
 	discountAmount: integer("discountAmount").default(0).notNull(),
 	costPerItem: integer("costPerItem").default(0).notNull(),
 	totalCost: integer("totalCost").default(0).notNull(),
+	userId: uuid("userId").notNull(),
 });
 
 // Relations for relational queries

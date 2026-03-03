@@ -126,11 +126,11 @@ export async function checkRateLimit(identifier: string): Promise<RateLimitResul
 			resetTime: null,
 		};
 	} catch {
-		// Fail open - allow the request if there's a database error
+		// Fail closed - block the request if there's a database error to prevent bypass
 		return {
-			allowed: true,
-			remainingAttempts: MAX_ATTEMPTS - 1,
-			resetTime: null,
+			allowed: false,
+			remainingAttempts: 0,
+			resetTime: Date.now() + 60 * 1000, // Minimal 1 min lockout for safety
 		};
 	}
 }

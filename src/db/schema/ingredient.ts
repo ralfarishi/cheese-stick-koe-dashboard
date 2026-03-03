@@ -11,6 +11,7 @@ export const ingredient = pgTable("Ingredient", {
 	name: text("name").unique().notNull(),
 	unit: text("unit").notNull(),
 	costPerUnit: real("costPerUnit").notNull(),
+	userId: uuid("userId").notNull(),
 	createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
@@ -25,6 +26,7 @@ export const ingredientHistory = pgTable("IngredientHistory", {
 	oldPrice: real("oldPrice").notNull(),
 	newPrice: real("newPrice").notNull(),
 	reason: text("reason"),
+	userId: uuid("userId").notNull(),
 	changedAt: timestamp("changedAt", { mode: "date" }).defaultNow().notNull(),
 });
 
@@ -38,6 +40,7 @@ export const sizeComponent = pgTable("SizeComponent", {
 	sizePriceId: uuid("sizePriceId").notNull(),
 	ingredientId: uuid("ingredientId").notNull(),
 	quantityNeeded: real("quantityNeeded").notNull(),
+	userId: uuid("userId").notNull(),
 });
 
 // Relations

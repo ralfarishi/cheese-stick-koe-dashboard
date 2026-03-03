@@ -3,8 +3,9 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { product } from "@/db/schema";
-import { ilike, asc, desc, count } from "drizzle-orm";
+import { ilike, asc, desc, count, eq, and } from "drizzle-orm";
 import { escapeForLike } from "@/lib/utils";
+import { verifySession } from "@/lib/verifySession";
 import type { Product, PaginatedResult, PaginationParams, SortOrder } from "@/lib/types";
 
 // Valid sort columns whitelist
@@ -38,8 +39,13 @@ export const getAllProducts = cache(
 		const offset = (safePage - 1) * safeLimit;
 
 		try {
-			// Build where clause for search
-			const whereClause = safeQuery ? ilike(product.name, `%${safeQuery}%`) : undefined;
+			const user = await verifySession();
+			if (!user) throw new Error("Unauthorized");
+
+			// Build where clause for search and isolation
+			const searchClause = safeQuery ? ilike(product.name, `%${safeQuery}%`) : undefined;
+			const userClause = eq(product.userId, user.id);
+			const whereClause = searchClause ? and(searchClause, userClause) : userClause;
 
 			// Get total count
 			const [{ total }] = await db.select({ total: count() }).from(product).where(whereClause);
@@ -52,6 +58,7 @@ export const getAllProducts = cache(
 			const data = await db
 				.select({
 					id: product.id,
+					userId: product.userId,
 					name: product.name,
 					description: product.description,
 					createdAt: product.createdAt,
@@ -69,6 +76,6 @@ export const getAllProducts = cache(
 			const error = err as Error;
 			return { data: [], error: error.message, count: 0, totalPages: 0 };
 		}
-	}
+	},
 );
 

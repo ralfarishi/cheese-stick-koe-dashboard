@@ -3,8 +3,9 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { ingredient } from "@/db/schema";
-import { ilike, asc, desc, count } from "drizzle-orm";
+import { ilike, asc, desc, count, and, eq } from "drizzle-orm";
 import { escapeForLike } from "@/lib/utils";
+import { verifySession } from "@/lib/verifySession";
 import type { Ingredient, PaginatedResult, PaginationParams, SortOrder } from "@/lib/types";
 
 // Valid sort columns whitelist
@@ -38,8 +39,13 @@ export const getAllIngredients = cache(
 		const offset = (safePage - 1) * safeLimit;
 
 		try {
+			const user = await verifySession();
+			if (!user) throw new Error("Unauthorized");
+
 			// Build where clause for search
-			const whereClause = safeQuery ? ilike(ingredient.name, `%${safeQuery}%`) : undefined;
+			const searchClause = safeQuery ? ilike(ingredient.name, `%${safeQuery}%`) : undefined;
+			const userClause = eq(ingredient.userId, user.id);
+			const whereClause = searchClause ? and(searchClause, userClause) : userClause;
 
 			// Get total count
 			const [{ total }] = await db.select({ total: count() }).from(ingredient).where(whereClause);
@@ -57,6 +63,7 @@ export const getAllIngredients = cache(
 			const data = await db
 				.select({
 					id: ingredient.id,
+					userId: ingredient.userId,
 					name: ingredient.name,
 					unit: ingredient.unit,
 					costPerUnit: ingredient.costPerUnit,
@@ -76,5 +83,5 @@ export const getAllIngredients = cache(
 			console.error("Error fetching ingredients:", err);
 			return { data: [], error: error.message, count: 0, totalPages: 0 };
 		}
-	}
+	},
 );

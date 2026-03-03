@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { ingredient } from "@/db/schema";
 import type { Ingredient, IngredientInput, ActionResult } from "@/lib/types";
+import { verifySession } from "@/lib/verifySession";
 
 /**
  * Add a new ingredient to the database
@@ -36,12 +37,16 @@ export const addIngredient = async ({
 	}
 
 	try {
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
 		const [data] = await db
 			.insert(ingredient)
 			.values({
 				name: safeName,
 				unit: safeUnit,
 				costPerUnit: cost,
+				userId: user.id,
 			})
 			.returning();
 

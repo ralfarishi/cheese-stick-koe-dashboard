@@ -36,6 +36,7 @@ export const getIngredientHistory = cache(
 			const data = await db
 				.select({
 					id: ingredientHistory.id,
+					userId: ingredientHistory.userId,
 					ingredientId: ingredientHistory.ingredientId,
 					oldPrice: ingredientHistory.oldPrice,
 					newPrice: ingredientHistory.newPrice,
@@ -52,5 +53,5 @@ export const getIngredientHistory = cache(
 			console.error("Error fetching ingredient history:", err);
 			return { error: "Failed to fetch price history", data: [] };
 		}
-	}
+	},
 );

@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 
 interface MonthlyCustomerStat {
 	month: string;
@@ -26,8 +27,13 @@ export const getCustomerStats = cache(
 		}
 
 		try {
+			const user = await verifySession();
+			if (!user) throw new Error("Unauthorized");
+
 			// Call existing RPC function via raw SQL
-			const result = await db.execute(sql`SELECT * FROM get_customer_stats(${safeYear})`);
+			const result = await db.execute(
+				sql`SELECT * FROM get_customer_stats(${safeYear}, ${user.id})`,
+			);
 
 			const data = (
 				Array.isArray(result) ? result : (result as { rows?: DBRow[] }).rows || []
@@ -55,5 +61,5 @@ export const getCustomerStats = cache(
 			console.error("Error fetching customer stats:", err);
 			return [];
 		}
-	}
+	},
 );

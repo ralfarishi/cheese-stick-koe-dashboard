@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 
 export interface TopProductStat {
 	productName: string;
@@ -23,8 +24,11 @@ interface DBRow {
  */
 export const getTopProducts = cache(async (limit: number = 5): Promise<TopProductStat[]> => {
 	try {
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
 		// Call the RPC function via raw SQL
-		const result = await db.execute(sql`SELECT * FROM get_top_products(${limit})`);
+		const result = await db.execute(sql`SELECT * FROM get_top_products(${limit}, ${user.id})`);
 
 		const data = (
 			Array.isArray(result) ? result : (result as { rows?: DBRow[] }).rows || []

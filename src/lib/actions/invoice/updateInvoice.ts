@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { invoice } from "@/db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 
 interface InvoiceUpdateData {
 	invoiceNumber: string;
@@ -51,15 +52,35 @@ export async function updateInvoice({
 	}
 
 	try {
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
 		// Check if invoice number already exists (excluding current invoice)
 		const [existing] = await db
 			.select({ id: invoice.id })
 			.from(invoice)
-			.where(and(eq(invoice.invoiceNumber, invoiceData.invoiceNumber), ne(invoice.id, invoiceId)))
+			.where(
+				and(
+					eq(invoice.invoiceNumber, invoiceData.invoiceNumber),
+					ne(invoice.id, invoiceId),
+					eq(invoice.userId, user.id),
+				),
+			)
 			.limit(1);
 
 		if (existing) {
 			return { success: false, error: "Invoice number already existed!" };
+		}
+
+		// Also check that the invoice to update belongs to user
+		const [currentInvoice] = await db
+			.select({ id: invoice.id })
+			.from(invoice)
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.userId, user.id)))
+			.limit(1);
+
+		if (!currentInvoice) {
+			return { success: false, error: "Invoice not found or unauthorized" };
 		}
 
 		// Prepare data for RPC
@@ -71,6 +92,7 @@ export async function updateInvoice({
 			discount: invoiceData.discount,
 			totalPrice: invoiceData.totalPrice,
 			status: invoiceData.status,
+			userId: user.id,
 		};
 
 		const itemsPayload = items.map((item) => ({
@@ -84,8 +106,8 @@ export async function updateInvoice({
 		// Call RPC function via raw SQL (preserves transaction logic)
 		await db.execute(
 			sql`SELECT update_invoice(${invoiceId}::uuid, ${JSON.stringify(
-				invoicePayload
-			)}::jsonb, ${JSON.stringify(itemsPayload)}::jsonb)`
+				invoicePayload,
+			)}::jsonb, ${JSON.stringify(itemsPayload)}::jsonb)`,
 		);
 
 		return { success: true };

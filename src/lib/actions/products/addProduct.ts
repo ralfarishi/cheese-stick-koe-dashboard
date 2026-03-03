@@ -2,8 +2,9 @@
 
 import { db } from "@/db";
 import { product } from "@/db/schema";
-import { ilike } from "drizzle-orm";
+import { ilike, and, eq } from "drizzle-orm";
 import type { Product, ProductInput, ActionResult } from "@/lib/types";
+import { verifySession } from "@/lib/verifySession";
 
 /**
  * Add a new product
@@ -26,11 +27,14 @@ export async function addProduct({
 	}
 
 	try {
-		// Check for duplicate name (case-insensitive)
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
+		// Check for duplicate name (case-insensitive) for this specific user
 		const [existingProduct] = await db
 			.select({ id: product.id })
 			.from(product)
-			.where(ilike(product.name, safeName))
+			.where(and(eq(product.userId, user.id), ilike(product.name, safeName)))
 			.limit(1);
 
 		if (existingProduct) {
@@ -40,7 +44,7 @@ export async function addProduct({
 		// Insert new product
 		const [data] = await db
 			.insert(product)
-			.values({ name: safeName, description: safeDescription })
+			.values({ name: safeName, description: safeDescription, userId: user.id })
 			.returning();
 
 		return { success: true, data };

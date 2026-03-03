@@ -10,6 +10,7 @@ export const product = pgTable("Product", {
 		.default(sql`gen_random_uuid()`),
 	name: text("name").unique().notNull(),
 	description: text("description"),
+	userId: uuid("userId").notNull(),
 	createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 
@@ -23,6 +24,7 @@ export const productSizePrice = pgTable("ProductSizePrice", {
 	size: text("size").unique().notNull(),
 	price: integer("price").notNull(),
 	laborPercent: integer("laborPercent").default(0).notNull(),
+	userId: uuid("userId").notNull(),
 	createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
 });
 

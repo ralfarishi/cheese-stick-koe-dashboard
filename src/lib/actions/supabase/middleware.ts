@@ -1,4 +1,3 @@
-import type { Session } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -23,11 +22,13 @@ export async function updateSession(request: NextRequest): Promise<UpdateSession
 				get(name: string) {
 					return request.cookies.get(name)?.value;
 				},
-				set(name: string, value: string, options: object) {
+				set(name: string, value: string, options: any) {
 					request.cookies.set({
 						name,
 						value,
 						...options,
+						httpOnly: true,
+						secure: process.env.NODE_ENV === "production",
 					});
 					response = NextResponse.next({
 						request: {
@@ -38,13 +39,17 @@ export async function updateSession(request: NextRequest): Promise<UpdateSession
 						name,
 						value,
 						...options,
+						httpOnly: true,
+						secure: process.env.NODE_ENV === "production",
 					});
 				},
-				remove(name: string, options: object) {
+				remove(name: string, options: any) {
 					request.cookies.set({
 						name,
 						value: "",
 						...options,
+						httpOnly: true,
+						secure: process.env.NODE_ENV === "production",
 					});
 					response = NextResponse.next({
 						request: {
@@ -55,6 +60,8 @@ export async function updateSession(request: NextRequest): Promise<UpdateSession
 						name,
 						value: "",
 						...options,
+						httpOnly: true,
+						secure: process.env.NODE_ENV === "production",
 					});
 				},
 			},

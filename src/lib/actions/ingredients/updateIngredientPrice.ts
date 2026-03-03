@@ -2,6 +2,7 @@
 
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 
 interface UpdateIngredientPriceInput {
 	id: string;
@@ -46,9 +47,12 @@ export const updateIngredientPrice = async ({
 	const safeReason = reason?.trim() || null;
 
 	try {
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
 		// Call the transactional RPC function via raw SQL
 		const result = await db.execute(
-			sql`SELECT update_ingredient_price(${id}::uuid, ${price}, ${safeReason}) as result`
+			sql`SELECT update_ingredient_price(${id}::uuid, ${price}, ${user.id}::uuid, ${safeReason}) as result`,
 		);
 
 		// Drizzle returns array directly, not { rows: [] }

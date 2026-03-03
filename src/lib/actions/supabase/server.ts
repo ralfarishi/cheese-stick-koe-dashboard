@@ -19,14 +19,22 @@ export async function createClient(): Promise<SupabaseClient> {
 				},
 				set(name: string, value: string, options: Parameters<typeof cookieStore.set>[2]) {
 					try {
-						cookieStore.set(name, value, options);
+						cookieStore.set(name, value, {
+							...options,
+							httpOnly: true,
+							secure: process.env.NODE_ENV === "production",
+						});
 					} catch {
 						// Handle cookie setting errors in middleware
 					}
 				},
 				remove(name: string, options: Parameters<typeof cookieStore.set>[2]) {
 					try {
-						cookieStore.set(name, "", options);
+						cookieStore.set(name, "", {
+							...options,
+							httpOnly: true,
+							secure: process.env.NODE_ENV === "production",
+						});
 					} catch {
 						// Handle cookie removal errors in middleware
 					}

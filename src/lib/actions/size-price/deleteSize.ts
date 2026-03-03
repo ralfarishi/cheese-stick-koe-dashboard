@@ -2,7 +2,8 @@
 
 import { db } from "@/db";
 import { productSizePrice } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
 
 interface DeleteResult {
@@ -20,7 +21,12 @@ export async function deleteSize(sizeId: string): Promise<DeleteResult> {
 	}
 
 	try {
-		const result = await db.delete(productSizePrice).where(eq(productSizePrice.id, sizeId));
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
+		const result = await db
+			.delete(productSizePrice)
+			.where(and(eq(productSizePrice.id, sizeId), eq(productSizePrice.userId, user.id)));
 
 		if ((result as { rowCount?: number }).rowCount === 0) {
 			return { success: false, message: "Size not found" };

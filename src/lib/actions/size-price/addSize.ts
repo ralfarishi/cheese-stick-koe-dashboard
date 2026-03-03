@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { productSizePrice } from "@/db/schema";
 import type { ProductSizePrice, SizePriceInput, ActionResult } from "@/lib/types";
+import { verifySession } from "@/lib/verifySession";
 
 /**
  * Add a new product size with price
@@ -28,9 +29,12 @@ export async function addSize({
 	}
 
 	try {
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
 		const [data] = await db
 			.insert(productSizePrice)
-			.values({ size: safeSize, price: parsedPrice })
+			.values({ size: safeSize, price: parsedPrice, userId: user.id })
 			.returning();
 
 		return { success: true, data };

@@ -2,8 +2,9 @@
 
 import { db } from "@/db";
 import { ingredient } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { ActionResult } from "@/lib/types";
+import { verifySession } from "@/lib/verifySession";
 
 interface DeleteIngredientInput {
 	id: string;
@@ -22,7 +23,12 @@ export const deleteIngredient = async ({
 	}
 
 	try {
-		const result = await db.delete(ingredient).where(eq(ingredient.id, id));
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
+		const result = await db
+			.delete(ingredient)
+			.where(and(eq(ingredient.id, id), eq(ingredient.userId, user.id)));
 
 		if ((result as { rowCount?: number }).rowCount === 0) {
 			return { error: "Ingredient not found" };

@@ -2,11 +2,13 @@
 
 import { db } from "@/db";
 import { invoice, invoiceItem, product, productSizePrice } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 import type { Invoice } from "@/lib/types";
 
 interface ItemWithDetails {
 	id: string;
+	userId: string;
 	invoiceId: string;
 	productId: string;
 	sizePriceId: string;
@@ -34,8 +36,15 @@ export async function getInvoiceWithItems(invoiceId: string): Promise<GetInvoice
 	}
 
 	try {
+		const user = await verifySession();
+		if (!user) return { invoice: null, items: [] };
+
 		// Get invoice
-		const [invoiceData] = await db.select().from(invoice).where(eq(invoice.id, invoiceId)).limit(1);
+		const [invoiceData] = await db
+			.select()
+			.from(invoice)
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.userId, user.id)))
+			.limit(1);
 
 		if (!invoiceData) {
 			return { invoice: null, items: [] };
@@ -45,6 +54,7 @@ export async function getInvoiceWithItems(invoiceId: string): Promise<GetInvoice
 		const items = await db
 			.select({
 				id: invoiceItem.id,
+				userId: invoiceItem.userId,
 				invoiceId: invoiceItem.invoiceId,
 				productId: invoiceItem.productId,
 				sizePriceId: invoiceItem.sizePriceId,
@@ -64,6 +74,7 @@ export async function getInvoiceWithItems(invoiceId: string): Promise<GetInvoice
 		// Transform to match original format
 		const formattedItems: ItemWithDetails[] = items.map((item) => ({
 			id: item.id,
+			userId: item.userId,
 			invoiceId: item.invoiceId,
 			productId: item.productId,
 			sizePriceId: item.sizePriceId,

@@ -31,8 +31,12 @@ export default async function UpdateInvoicePage({ params }: PageProps) {
 	const [{ data: invoice, error: invoiceError }, { data: products }, { data: sizes }] =
 		await Promise.all([
 			getInvoiceByNumber(invoiceNumber),
-			supabase.from("Product").select("id, name").order("name"),
-			supabase.from("ProductSizePrice").select("id, size, price").order("size"),
+			supabase.from("Product").select("id, name").eq("userId", user.id).order("name"),
+			supabase
+				.from("ProductSizePrice")
+				.select("id, size, price")
+				.eq("userId", user.id)
+				.order("size"),
 		]);
 
 	if (invoiceError || !invoice) {

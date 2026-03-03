@@ -2,8 +2,9 @@
 
 import { db } from "@/db";
 import { sizeComponent } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { ActionResult } from "@/lib/types";
+import { verifySession } from "@/lib/verifySession";
 
 interface DeleteSizeComponentInput {
 	id: string;
@@ -21,7 +22,12 @@ export const deleteSizeComponent = async ({
 	}
 
 	try {
-		const result = await db.delete(sizeComponent).where(eq(sizeComponent.id, id));
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
+		const result = await db
+			.delete(sizeComponent)
+			.where(and(eq(sizeComponent.id, id), eq(sizeComponent.userId, user.id)));
 
 		if ((result as { rowCount?: number }).rowCount === 0) {
 			return { error: "Component not found" };

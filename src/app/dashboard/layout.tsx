@@ -1,10 +1,22 @@
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { createClient } from "@/lib/actions/supabase/server";
+import { unauthorized } from "next/navigation";
 
 interface DashboardLayoutProps {
 	children: React.ReactNode;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+	const supabase = await createClient();
+
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
+
+	if (!user) {
+		unauthorized();
+	}
+
 	return (
 		<div className="h-screen flex flex-col md:flex-row bg-[#fffaf0]">
 			<Sidebar />

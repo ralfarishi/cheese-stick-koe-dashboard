@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { sizeComponent } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { SizeComponent, ActionResult } from "@/lib/types";
+import { verifySession } from "@/lib/verifySession";
 
 interface UpsertSizeComponentInput {
 	sizePriceId: string;
@@ -32,6 +33,9 @@ export const upsertSizeComponent = async ({
 	}
 
 	try {
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
 		// Check if component already exists
 		const [existing] = await db
 			.select({ id: sizeComponent.id })
@@ -39,8 +43,9 @@ export const upsertSizeComponent = async ({
 			.where(
 				and(
 					eq(sizeComponent.sizePriceId, sizePriceId),
-					eq(sizeComponent.ingredientId, ingredientId)
-				)
+					eq(sizeComponent.ingredientId, ingredientId),
+					eq(sizeComponent.userId, user.id),
+				),
 			)
 			.limit(1);
 
@@ -61,6 +66,7 @@ export const upsertSizeComponent = async ({
 					sizePriceId,
 					ingredientId,
 					quantityNeeded: quantity,
+					userId: user.id,
 				})
 				.returning();
 		}

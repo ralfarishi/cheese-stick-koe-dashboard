@@ -2,7 +2,8 @@
 
 import { db } from "@/db";
 import { product } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
 
 interface DeleteResult {
@@ -20,7 +21,12 @@ export async function deleteProduct(productId: string): Promise<DeleteResult> {
 	}
 
 	try {
-		const result = await db.delete(product).where(eq(product.id, productId));
+		const user = await verifySession();
+		if (!user) throw new Error("Unauthorized");
+
+		const result = await db
+			.delete(product)
+			.where(and(eq(product.id, productId), eq(product.userId, user.id)));
 
 		if ((result as { rowCount?: number }).rowCount === 0) {
 			return { success: false, message: "Product not found" };

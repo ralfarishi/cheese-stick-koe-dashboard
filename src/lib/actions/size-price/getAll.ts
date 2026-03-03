@@ -3,7 +3,8 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { productSizePrice } from "@/db/schema";
-import { asc, desc, count } from "drizzle-orm";
+import { asc, desc, count, eq } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 import type { ProductSizePrice, PaginatedResult, PaginationParams, SortOrder } from "@/lib/types";
 
 // Valid sort columns whitelist
@@ -35,8 +36,14 @@ export const getAllSizePrice = cache(
 		const offset = (safePage - 1) * safeLimit;
 
 		try {
+			const user = await verifySession();
+			if (!user) throw new Error("Unauthorized");
+
 			// Get total count
-			const [{ total }] = await db.select({ total: count() }).from(productSizePrice);
+			const [{ total }] = await db
+				.select({ total: count() })
+				.from(productSizePrice)
+				.where(eq(productSizePrice.userId, user.id));
 
 			// Build order by - map column name to schema field
 			const sortColumnMap = {
@@ -52,12 +59,14 @@ export const getAllSizePrice = cache(
 			const data = await db
 				.select({
 					id: productSizePrice.id,
+					userId: productSizePrice.userId,
 					size: productSizePrice.size,
 					price: productSizePrice.price,
 					laborPercent: productSizePrice.laborPercent,
 					createdAt: productSizePrice.createdAt,
 				})
 				.from(productSizePrice)
+				.where(eq(productSizePrice.userId, user.id))
 				.orderBy(orderBy)
 				.limit(safeLimit)
 				.offset(offset);
@@ -70,5 +79,5 @@ export const getAllSizePrice = cache(
 			console.error("Error fetching size prices:", err);
 			return { data: [], error: error.message, count: 0, totalPages: 0 };
 		}
-	}
+	},
 );

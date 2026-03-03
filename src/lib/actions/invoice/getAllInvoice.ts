@@ -3,8 +3,9 @@
 import { cache } from "react";
 import { db } from "@/db";
 import { invoice } from "@/db/schema";
-import { or, ilike, asc, desc, count } from "drizzle-orm";
+import { or, ilike, asc, desc, count, and, eq } from "drizzle-orm";
 import { escapeForLike } from "@/lib/utils";
+import { verifySession } from "@/lib/verifySession";
 import type { Invoice, PaginatedResult, PaginationParams, SortOrder } from "@/lib/types";
 
 interface GetAllInvoiceParams extends PaginationParams {}
@@ -28,13 +29,18 @@ export const getAllInvoice = cache(
 		const offset = (safePage - 1) * safeLimit;
 
 		try {
+			const user = await verifySession();
+			if (!user) throw new Error("Unauthorized");
+
 			// Build where clause for search
-			const whereClause = safeQuery
+			const searchClause = safeQuery
 				? or(
 						ilike(invoice.invoiceNumber, `%${safeQuery}%`),
-						ilike(invoice.buyerName, `%${safeQuery}%`)
+						ilike(invoice.buyerName, `%${safeQuery}%`),
 					)
 				: undefined;
+			const userClause = eq(invoice.userId, user.id);
+			const whereClause = searchClause ? and(searchClause, userClause) : userClause;
 
 			// Get total count
 			const [{ total }] = await db.select({ total: count() }).from(invoice).where(whereClause);
@@ -66,6 +72,6 @@ export const getAllInvoice = cache(
 			const error = err as Error;
 			return { data: [], error: error.message, count: 0, totalPages: 0 };
 		}
-	}
+	},
 );
 

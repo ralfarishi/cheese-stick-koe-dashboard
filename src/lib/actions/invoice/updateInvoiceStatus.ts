@@ -2,7 +2,8 @@
 
 import { db } from "@/db";
 import { invoice } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
 import type { InvoiceStatus } from "@/lib/types";
 
@@ -19,7 +20,7 @@ interface UpdateStatusResult {
  */
 export async function updateInvoiceStatus(
 	invoiceId: string,
-	status: string
+	status: string,
 ): Promise<UpdateStatusResult> {
 	// Input validation
 	if (!invoiceId || typeof invoiceId !== "string") {
@@ -34,7 +35,13 @@ export async function updateInvoiceStatus(
 	}
 
 	try {
-		const result = await db.update(invoice).set({ status }).where(eq(invoice.id, invoiceId));
+		const user = await verifySession();
+		if (!user) return { success: false, error: "Unauthorized" };
+
+		const result = await db
+			.update(invoice)
+			.set({ status })
+			.where(and(eq(invoice.id, invoiceId), eq(invoice.userId, user.id)));
 
 		if ((result as { rowCount?: number }).rowCount === 0) {
 			return { success: false, error: "Invoice not found" };
