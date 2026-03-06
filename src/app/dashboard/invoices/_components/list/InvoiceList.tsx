@@ -11,12 +11,29 @@ import { Input } from "@/components/ui/input";
 
 import DeleteInvoiceModal from "./DeleteInvoiceModal";
 import InvoiceDownloadModal from "../preview/InvoiceDownloadModal";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { getInvoiceWithItems } from "@/lib/actions/invoice/getInvoiceWithItem";
 
 import { formatInvoiceDateTime, toTitleCase } from "@/lib/utils";
 
-import { Pencil, Trash2, Download, FileText, Search, Filter, Zap } from "lucide-react";
+import {
+	MoreHorizontal,
+	Printer,
+	Pencil,
+	Trash2,
+	Download,
+	FileText,
+	Search,
+	Filter,
+	Zap,
+} from "lucide-react";
 import Link from "next/link";
 import InlineStatusUpdate from "./InlineStatusUpdate";
 import { TablePagination } from "@/components/dashboard/TablePagination";
@@ -38,6 +55,7 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 	const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 	const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 	const [downloadModalOpen, setDownloadModalOpen] = useState<boolean>(false);
+	const [isModalLoading, setIsModalLoading] = useState<boolean>(false);
 	const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
 
 	// nuqs state management - shallow: false triggers server refetch
@@ -84,11 +102,15 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 		refresh: () => router.refresh(),
 	}));
 
-	const handleDownload = async (invoiceId: string): Promise<void> => {
-		const { invoice, items } = await getInvoiceWithItems(invoiceId);
-		setSelectedInvoice(invoice);
-		setInvoiceItems(items);
+	const handleDownload = async (invoiceId: string, invoiceData: Invoice): Promise<void> => {
+		setSelectedInvoice(invoiceData);
 		setDownloadModalOpen(true);
+		setIsModalLoading(true);
+
+		const { invoice, items } = await getInvoiceWithItems(invoiceId);
+		if (invoice) setSelectedInvoice(invoice);
+		setInvoiceItems(items);
+		setIsModalLoading(false);
 	};
 
 	return (
@@ -154,7 +176,7 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 							<th className="px-6 py-3 font-bold text-sm text-left">Total Price</th>
 							<th className="px-6 py-3 text-center text-sm font-bold">Date</th>
 							<th className="px-6 py-3 text-center text-sm font-bold">Status</th>
-							<th className="px-6 py-3 text-center text-sm font-bold">Actions</th>
+							<th className="px-6 py-3 text-center text-sm font-bold w-[100px]">Actions</th>
 						</tr>
 					</thead>
 					<tbody className="text-left divide-y divide-gray-100">
@@ -183,41 +205,56 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 											currentStatus={data.status as "pending" | "success" | "canceled"}
 										/>
 									</td>
-									<td className="px-6 py-4">
-										<div className="flex items-center justify-center gap-1">
-											<Button
-												onClick={() => {
-													router.push(`/dashboard/invoices/${data.invoiceNumber}`);
-												}}
-												variant="ghost"
-												size="icon"
-												className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
-												title="Edit Invoice"
-											>
-												<Pencil className="h-4 w-4" />
-											</Button>
-											<Button
-												onClick={() => {
-													setSelectedInvoice(data);
-													setDeleteModalOpen(true);
-												}}
-												variant="ghost"
-												size="icon"
-												className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg"
-												title="Delete Invoice"
-											>
-												<Trash2 className="h-4 w-4" />
-											</Button>
-											<Button
-												onClick={() => handleDownload(data.id)}
-												variant="ghost"
-												size="icon"
-												className="text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
-												title="Download Invoice"
-											>
-												<Download className="h-4 w-4" />
-											</Button>
-										</div>
+									<td className="px-6 py-4 text-center">
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button variant="ghost" className="h-8 w-8 p-0">
+													<span className="sr-only">Open menu</span>
+													<MoreHorizontal className="h-4 w-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end" className="w-[160px]">
+												<DropdownMenuItem
+													onClick={() => setTimeout(() => handleDownload(data.id, data), 100)}
+													className="cursor-pointer"
+												>
+													<Download className="mr-2 h-4 w-4" />
+													<span>Download</span>
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onClick={() => {
+														window.open(
+															`/dashboard/invoices/${data.invoiceNumber}/print`,
+															"_blank",
+														);
+													}}
+													className="cursor-pointer"
+												>
+													<Printer className="mr-2 h-4 w-4" />
+													<span>Print Receipt</span>
+												</DropdownMenuItem>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													onClick={() => router.push(`/dashboard/invoices/${data.invoiceNumber}`)}
+													className="cursor-pointer"
+												>
+													<Pencil className="mr-2 h-4 w-4" />
+													<span>Edit</span>
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onClick={() => {
+														setTimeout(() => {
+															setSelectedInvoice(data);
+															setDeleteModalOpen(true);
+														}, 100);
+													}}
+													className="cursor-pointer text-rose-600 focus:text-rose-600 focus:bg-rose-50"
+												>
+													<Trash2 className="mr-2 h-4 w-4" />
+													<span>Delete</span>
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
 									</td>
 								</tr>
 							))
@@ -273,6 +310,7 @@ const InvoicesTable = forwardRef<TableRef, InvoicesTableProps>(function Invoices
 				onOpenChange={setDownloadModalOpen}
 				invoice={selectedInvoice}
 				invoiceItems={invoiceItems}
+				isFetching={isModalLoading}
 			/>
 		</div>
 	);

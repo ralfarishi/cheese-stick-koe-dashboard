@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import type { Invoice, InvoiceItem, Product, ProductSizePrice } from "@/lib/types";
-import { getAllProducts } from "@/lib/actions/products/getAllProducts";
-import { getAllSizePrice } from "@/lib/actions/size-price/getAll";
+import type { Invoice, InvoiceItem } from "@/lib/types";
 
 export interface PreviewItem {
 	id: string;
@@ -37,53 +35,39 @@ export function useInvoicePreviewData({
 	onDataReady,
 	onReady,
 }: UseInvoicePreviewDataProps): UseInvoicePreviewDataReturn {
-	const [products, setProducts] = useState<Product[]>([]);
-	const [sizes, setSizes] = useState<ProductSizePrice[]>([]);
 	const [items, setItems] = useState<PreviewItem[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
-	// Fetch products and sizes
+	// Map invoice items directly since we already have the joined data from getInvoiceWithItems
 	useEffect(() => {
-		const fetchData = async (): Promise<void> => {
-			setIsLoading(true);
-			const { data: productsData } = await getAllProducts({ limit: 1000 });
-			const { data: sizeData } = await getAllSizePrice({ limit: 1000 });
-
-			setProducts(productsData || []);
-			setSizes(sizeData || []);
-			setIsLoading(false);
-		};
-
-		fetchData();
-	}, []);
-
-	// Map invoice items with product and size details
-	useEffect(() => {
-		if (invoiceItems?.length && products.length && sizes.length) {
-			const mappedItems: PreviewItem[] = invoiceItems.map((item) => {
-				const product = products.find((p) => p.id === item.productId);
-				const size = sizes.find((s) => s.id === item.sizePriceId);
-				const price = size?.price || 0;
+		if (invoiceItems?.length) {
+			const mappedItems: PreviewItem[] = invoiceItems.map((item: any) => {
 				const discount = item.discountAmount || 0;
-				const quantity = item.quantity;
+				const quantity = item.quantity || 1;
+				const total = item.subtotal || 0;
+				// Reconstruct original price from total and discount
+				const price = (total + discount) / quantity;
 
 				return {
 					id: item.id || `${item.productId}-${item.sizePriceId}`,
-					productName: product?.name || "Unknown",
-					sizeName: size?.size || "Unknown",
+					productName: item.product?.name || item.productName || "Unknown",
+					sizeName: item.size?.size || item.sizeName || "Unknown",
 					quantity,
 					price,
 					discountAmount: discount,
-					total: quantity * price - discount,
+					total,
 				};
 			});
 
 			setItems(mappedItems);
+			setIsLoading(false);
 			onDataReady?.(true);
 		} else {
+			setItems([]);
+			setIsLoading(false);
 			onDataReady?.(false);
 		}
-	}, [invoiceItems, products, sizes, onDataReady]);
+	}, [invoiceItems, onDataReady]);
 
 	// Notify when ready
 	useEffect(() => {

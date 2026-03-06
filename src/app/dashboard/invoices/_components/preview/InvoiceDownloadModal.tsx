@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
+import { useRef, useState } from "react";
 import type { Invoice, InvoiceItem } from "@/lib/types";
 
 import {
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 import InvoicePreview from "./InvoicePreview";
+import InvoicePreviewSkeleton from "./InvoicePreviewSkeleton";
 
 import { exportInvoiceToPng } from "@/lib/exportToPng";
 import { formatDateFilename } from "@/lib/utils";
@@ -27,6 +28,7 @@ interface InvoiceDownloadModalProps {
 	onOpenChange: (open: boolean) => void;
 	invoice: Invoice | null;
 	invoiceItems: InvoiceItem[];
+	isFetching?: boolean;
 }
 
 interface ShippingOption {
@@ -40,6 +42,7 @@ export default function InvoiceDownloadModal({
 	onOpenChange,
 	invoice,
 	invoiceItems,
+	isFetching = false,
 }: InvoiceDownloadModalProps) {
 	const invoiceRef = useRef<HTMLDivElement>(null);
 	const hiddenRef = useRef<HTMLDivElement>(null);
@@ -129,14 +132,18 @@ export default function InvoiceDownloadModal({
 						overflow: "visible",
 					}}
 				>
-					<InvoicePreview
-						invoice={invoice}
-						invoiceItems={invoiceItems}
-						onDataReady={setDataReady}
-						onReady={() => setIsInvoiceReady(true)}
-						shippingType={shippingType}
-						isDownloadVersion
-					/>
+					{isFetching ? (
+						<InvoicePreviewSkeleton isDownloadVersion />
+					) : (
+						<InvoicePreview
+							invoice={invoice}
+							invoiceItems={invoiceItems}
+							onDataReady={setDataReady}
+							onReady={() => setIsInvoiceReady(true)}
+							shippingType={shippingType}
+							isDownloadVersion
+						/>
+					)}
 				</div>
 
 				{/* Sticky Header for Shipping Options */}
@@ -213,13 +220,17 @@ export default function InvoiceDownloadModal({
 
 				{/* Main Content */}
 				<div ref={invoiceRef} className="bg-white p-6">
-					<InvoicePreview
-						invoice={invoice}
-						invoiceItems={invoiceItems}
-						onDataReady={setDataReady}
-						shippingType={shippingType}
-						onReady={() => setIsInvoiceReady(true)}
-					/>
+					{isFetching ? (
+						<InvoicePreviewSkeleton />
+					) : (
+						<InvoicePreview
+							invoice={invoice}
+							invoiceItems={invoiceItems}
+							onDataReady={setDataReady}
+							shippingType={shippingType}
+							onReady={() => setIsInvoiceReady(true)}
+						/>
+					)}
 				</div>
 
 				{/* desktop view */}
