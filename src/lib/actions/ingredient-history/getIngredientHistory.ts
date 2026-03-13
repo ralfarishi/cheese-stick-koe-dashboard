@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { ingredientHistory } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import type { IngredientHistory } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 interface GetIngredientHistoryInput {
 	ingredientId?: string;
@@ -50,7 +51,7 @@ export const getIngredientHistory = cache(
 
 			return { data };
 		} catch (err) {
-			console.error("Error fetching ingredient history:", err);
+			logger.error("getIngredientHistory", err);
 			return { error: "Failed to fetch price history", data: [] };
 		}
 	},

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { rateLimit } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import type { RateLimit } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 interface FormattedRateLimit extends Omit<RateLimit, "firstAttempt" | "lockedUntil"> {
 	firstAttempt: number;
@@ -31,7 +32,7 @@ export async function getRateLimits(): Promise<GetRateLimitsResult> {
 
 		return { data: formattedData };
 	} catch (err) {
-		console.error("Error fetching rate limits:", err);
+		logger.error("getRateLimits", err);
 		return { data: [], error: "Failed to fetch rate limits" };
 	}
 }

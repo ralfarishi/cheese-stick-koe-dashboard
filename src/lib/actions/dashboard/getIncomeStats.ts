@@ -2,6 +2,7 @@
 
 import { cache } from "react";
 import { createClient } from "@/lib/actions/supabase/server";
+import { logger } from "@/lib/logger";
 
 export interface MonthlyIncome {
 	month: string;
@@ -35,7 +36,7 @@ export const getIncomeStats = cache(async (year: number): Promise<MonthlyIncome[
 
 		return (data as MonthlyIncome[]) || [];
 	} catch (err) {
-		console.error("Error fetching income stats:", err);
+		logger.error("getIncomeStats", err);
 		// Return empty array on error to prevent UI crashes
 		return [];
 	}

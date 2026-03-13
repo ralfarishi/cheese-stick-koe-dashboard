@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { ingredient } from "@/db/schema";
 import type { Ingredient, IngredientInput, ActionResult } from "@/lib/types";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 /**
  * Add a new ingredient to the database
@@ -56,7 +57,7 @@ export const addIngredient = async ({
 		if (error.code === "23505") {
 			return { error: `Ingredient "${safeName}" already exists` };
 		}
-		console.error("Error adding ingredient:", err);
+		logger.error("addIngredient", err);
 		return { error: "Failed to add ingredient" };
 	}
 };

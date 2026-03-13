@@ -7,6 +7,7 @@ import { ilike, asc, desc, count, and, eq } from "drizzle-orm";
 import { escapeForLike } from "@/lib/utils";
 import { verifySession } from "@/lib/verifySession";
 import type { Ingredient, PaginatedResult, PaginationParams, SortOrder } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 // Valid sort columns whitelist
 const VALID_SORT_COLUMNS = ["name", "costPerUnit", "createdAt"] as const;
@@ -80,7 +81,7 @@ export const getAllIngredients = cache(
 			return { data, error: null, count: total, totalPages };
 		} catch (err: unknown) {
 			const error = err as Error;
-			console.error("Error fetching ingredients:", err);
+			logger.error("getAllIngredients", err);
 			return { data: [], error: error.message, count: 0, totalPages: 0 };
 		}
 	},

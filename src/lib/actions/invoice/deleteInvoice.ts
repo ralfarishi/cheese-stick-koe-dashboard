@@ -5,6 +5,7 @@ import { invoice } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
+import { logger } from "@/lib/logger";
 
 interface DeleteResult {
 	success: boolean;
@@ -37,7 +38,7 @@ export async function deleteInvoice(invoiceId: string): Promise<DeleteResult> {
 
 		return { success: true };
 	} catch (err) {
-		console.error("Error deleting invoice:", err);
+		logger.error("deleteInvoice", err);
 		return { success: false, message: "Failed to delete invoice" };
 	}
 }

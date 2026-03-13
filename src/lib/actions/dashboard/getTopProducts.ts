@@ -4,6 +4,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 export interface TopProductStat {
 	productName: string;
@@ -41,7 +42,7 @@ export const getTopProducts = cache(async (limit: number = 5): Promise<TopProduc
 			totalRevenue: Number(item.total_revenue) || 0,
 		}));
 	} catch (err) {
-		console.error("Error fetching top products:", err);
+		logger.error("getTopProducts", err);
 		return [];
 	}
 });

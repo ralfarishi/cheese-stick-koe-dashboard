@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { productSizePrice } from "@/db/schema";
 import type { ProductSizePrice, SizePriceInput, ActionResult } from "@/lib/types";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 /**
  * Add a new product size with price
@@ -39,7 +40,7 @@ export async function addSize({
 
 		return { success: true, data };
 	} catch (err) {
-		console.error("Error adding size:", err);
+		logger.error("addSize", err);
 		return { error: "Failed to add size" };
 	}
 }

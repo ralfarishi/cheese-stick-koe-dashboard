@@ -5,6 +5,7 @@ import { sizeComponent } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { ActionResult } from "@/lib/types";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 interface DeleteSizeComponentInput {
 	id: string;
@@ -35,7 +36,7 @@ export const deleteSizeComponent = async ({
 
 		return { success: true, data: undefined };
 	} catch (err) {
-		console.error("Error deleting size component:", err);
+		logger.error("deleteSizeComponent", err);
 		return { error: "Failed to delete recipe component" };
 	}
 };

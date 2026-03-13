@@ -6,6 +6,7 @@ import { eq, and } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
 import type { InvoiceStatus } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 // Valid status values for invoice
 const VALID_STATUSES: InvoiceStatus[] = ["pending", "success", "canceled"];
@@ -50,7 +51,7 @@ export async function updateInvoiceStatus(
 		revalidatePath("/dashboard/invoices");
 		return { success: true };
 	} catch (err) {
-		console.error("Error updating invoice status:", err);
+		logger.error("updateInvoiceStatus", err);
 		return { success: false, error: "Failed to update invoice status" };
 	}
 }

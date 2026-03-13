@@ -5,6 +5,7 @@ import { sizeComponent } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { SizeComponent, ActionResult } from "@/lib/types";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 interface UpsertSizeComponentInput {
 	sizePriceId: string;
@@ -73,7 +74,7 @@ export const upsertSizeComponent = async ({
 
 		return { success: true, data };
 	} catch (err) {
-		console.error("Error upserting size component:", err);
+		logger.error("upsertSizeComponent", err);
 		return { error: "Failed to save recipe component" };
 	}
 };

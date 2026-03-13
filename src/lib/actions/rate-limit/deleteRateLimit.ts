@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { rateLimit } from "@/db/schema";
 import { inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { logger } from "@/lib/logger";
 
 interface DeleteResult {
 	success: boolean;
@@ -34,7 +35,7 @@ export async function deleteRateLimit(identifiers: string[]): Promise<DeleteResu
 			message: `Successfully deleted ${safeIdentifiers.length} record(s)`,
 		};
 	} catch (err) {
-		console.error("Error deleting rate limits:", err);
+		logger.error("deleteRateLimit", err);
 		return { success: false, message: "An unexpected error occurred" };
 	}
 }

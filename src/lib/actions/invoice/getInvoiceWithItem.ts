@@ -5,6 +5,7 @@ import { invoice, invoiceItem, product, productSizePrice } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
 import type { Invoice } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 interface ItemWithDetails {
 	id: string;
@@ -89,7 +90,7 @@ export async function getInvoiceWithItems(invoiceId: string): Promise<GetInvoice
 
 		return { invoice: invoiceData, items: formattedItems };
 	} catch (err) {
-		console.error("Error fetching invoice with items:", err);
+		logger.error("getInvoiceWithItems", err);
 		return { invoice: null, items: [] };
 	}
 }

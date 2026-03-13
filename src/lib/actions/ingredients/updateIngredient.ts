@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { ingredient } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import type { Ingredient, ActionResult } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 interface UpdateIngredientInput {
 	id: string;
@@ -61,7 +62,7 @@ export const updateIngredient = async ({
 		if (error.code === "23505") {
 			return { error: `Ingredient "${safeName}" already exists` };
 		}
-		console.error("Error updating ingredient:", err);
+		logger.error("updateIngredient", err);
 		return { error: "Failed to update ingredient" };
 	}
 };

@@ -6,6 +6,7 @@ import { productSizePrice } from "@/db/schema";
 import { asc, desc, count, eq } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
 import type { ProductSizePrice, PaginatedResult, PaginationParams, SortOrder } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 // Valid sort columns whitelist
 const VALID_SORT_COLUMNS = ["size", "price", "laborPercent", "createdAt"] as const;
@@ -76,7 +77,7 @@ export const getAllSizePrice = cache(
 			return { data, error: null, count: total, totalPages };
 		} catch (err: unknown) {
 			const error = err as Error;
-			console.error("Error fetching size prices:", err);
+			logger.error("getAllSizePrice", err);
 			return { data: [], error: error.message, count: 0, totalPages: 0 };
 		}
 	},

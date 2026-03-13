@@ -5,6 +5,7 @@ import { ingredient } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import type { ActionResult } from "@/lib/types";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 interface DeleteIngredientInput {
 	id: string;
@@ -37,7 +38,7 @@ export const deleteIngredient = async ({
 		return { success: true, data: undefined };
 	} catch (err: unknown) {
 		const error = err as { code?: string };
-		console.error("Error deleting ingredient:", err);
+		logger.error("deleteIngredient", err);
 		// Check for foreign key violation
 		if (error.code === "23503") {
 			return { error: "Cannot delete ingredient - it is used in recipes" };

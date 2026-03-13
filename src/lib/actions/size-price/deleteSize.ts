@@ -5,6 +5,7 @@ import { productSizePrice } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
+import { logger } from "@/lib/logger";
 
 interface DeleteResult {
 	success: boolean;
@@ -41,7 +42,7 @@ export async function deleteSize(sizeId: string): Promise<DeleteResult> {
 		if (error.code === "23503") {
 			return { success: false, message: "Cannot delete size: it is used in invoices or recipes" };
 		}
-		console.error("Error deleting size:", err);
+		logger.error("deleteSize", err);
 		return { success: false, message: "Failed to delete size" };
 	}
 }

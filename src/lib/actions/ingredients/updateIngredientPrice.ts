@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 interface UpdateIngredientPriceInput {
 	id: string;
@@ -72,7 +73,7 @@ export const updateIngredientPrice = async ({
 			historyId: data.history_id,
 		};
 	} catch (err) {
-		console.error("Error updating ingredient price:", err);
+		logger.error("updateIngredientPrice", err);
 		return { error: "Failed to update ingredient price" };
 	}
 };

@@ -5,6 +5,7 @@ import { product } from "@/db/schema";
 import { ilike, and, eq } from "drizzle-orm";
 import type { Product, ProductInput, ActionResult } from "@/lib/types";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 /**
  * Add a new product
@@ -49,7 +50,7 @@ export async function addProduct({
 
 		return { success: true, data };
 	} catch (err) {
-		console.error("Error adding product:", err);
+		logger.error("addProduct", err);
 		return { error: "Failed to add product" };
 	}
 }

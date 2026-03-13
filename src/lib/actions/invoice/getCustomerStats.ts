@@ -4,6 +4,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
+import { logger } from "@/lib/logger";
 
 interface MonthlyCustomerStat {
 	month: string;
@@ -58,7 +59,7 @@ export const getCustomerStats = cache(
 
 			return monthlyCustomers;
 		} catch (err) {
-			console.error("Error fetching customer stats:", err);
+			logger.error("getCustomerStats", err);
 			return [];
 		}
 	},

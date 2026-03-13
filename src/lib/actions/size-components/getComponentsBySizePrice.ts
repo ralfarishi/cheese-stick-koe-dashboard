@@ -4,6 +4,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { sizeComponent, ingredient } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 interface IngredientData {
 	id: string;
@@ -66,7 +67,7 @@ export const getComponentsBySizePrice = cache(
 
 			return { data: componentsWithCost, totalCOGS };
 		} catch (err) {
-			console.error("Error fetching size components:", err);
+			logger.error("getComponentsBySizePrice", err);
 			return { error: "Failed to fetch recipe components", data: [] };
 		}
 	}

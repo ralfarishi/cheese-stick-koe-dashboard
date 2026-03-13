@@ -5,6 +5,7 @@ import { product } from "@/db/schema";
 import { eq, and, ne, ilike } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { ProductInput } from "@/lib/types";
+import { logger } from "@/lib/logger";
 
 interface UpdateResult {
 	success: boolean;
@@ -60,7 +61,7 @@ export async function updateProduct(
 
 		return { success: true };
 	} catch (err) {
-		console.error("Error updating product:", err);
+		logger.error("updateProduct", err);
 		return { success: false, message: "Failed to update product" };
 	}
 }

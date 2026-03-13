@@ -5,6 +5,7 @@ import { product } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
 import { revalidatePath } from "next/cache";
+import { logger } from "@/lib/logger";
 
 interface DeleteResult {
 	success: boolean;
@@ -41,7 +42,7 @@ export async function deleteProduct(productId: string): Promise<DeleteResult> {
 		if (error.code === "23503") {
 			return { success: false, message: "Cannot delete product: it is used in invoices" };
 		}
-		console.error("Error deleting product:", err);
+		logger.error("deleteProduct", err);
 		return { success: false, message: "Failed to delete product" };
 	}
 }

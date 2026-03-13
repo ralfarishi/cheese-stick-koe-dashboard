@@ -4,30 +4,8 @@ import { db } from "@/db";
 import { invoice } from "@/db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
 import { verifySession } from "@/lib/verifySession";
-
-interface InvoiceUpdateData {
-	invoiceNumber: string;
-	buyerName: string;
-	invoiceDate: Date | string;
-	shipping: string | number;
-	discount: number;
-	totalPrice: number;
-	status: string;
-}
-
-interface InvoiceItemUpdate {
-	productId: string;
-	sizePriceId: string;
-	quantity: number;
-	price?: number;
-	discountAmount?: number;
-}
-
-interface UpdateInvoiceInput {
-	invoiceId: string;
-	invoiceData: InvoiceUpdateData;
-	items: InvoiceItemUpdate[];
-}
+import { updateInvoiceSchema } from "@/lib/validations";
+import { logger } from "@/lib/logger";
 
 interface UpdateResult {
 	success: boolean;
@@ -37,23 +15,18 @@ interface UpdateResult {
 /**
  * Update an existing invoice with items using RPC transaction
  */
-export async function updateInvoice({
-	invoiceId,
-	invoiceData,
-	items,
-}: UpdateInvoiceInput): Promise<UpdateResult> {
-	// Input validation
-	if (!invoiceId || typeof invoiceId !== "string") {
-		return { success: false, error: "Invalid invoice ID" };
+export async function updateInvoice(input: unknown): Promise<UpdateResult> {
+	// Zod validation
+	const parsed = updateInvoiceSchema.safeParse(input);
+	if (!parsed.success) {
+		return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 	}
 
-	if (!invoiceData || !Array.isArray(items)) {
-		return { success: false, error: "Invalid invoice data" };
-	}
+	const { invoiceId, invoiceData, items } = parsed.data;
 
 	try {
 		const user = await verifySession();
-		if (!user) throw new Error("Unauthorized");
+		if (!user) return { success: false, error: "Unauthorized" };
 
 		// Check if invoice number already exists (excluding current invoice)
 		const [existing] = await db
@@ -87,8 +60,8 @@ export async function updateInvoice({
 		const invoicePayload = {
 			invoiceNumber: invoiceData.invoiceNumber,
 			buyerName: invoiceData.buyerName,
-			invoiceDate: new Date(invoiceData.invoiceDate).toISOString(),
-			shipping: parseInt(String(invoiceData.shipping)) || 0,
+			invoiceDate: invoiceData.invoiceDate.toISOString(),
+			shipping: invoiceData.shipping,
 			discount: invoiceData.discount,
 			totalPrice: invoiceData.totalPrice,
 			status: invoiceData.status,
@@ -111,10 +84,8 @@ export async function updateInvoice({
 		);
 
 		return { success: true };
-	} catch (err: unknown) {
-		const error = err as Error;
-		console.error("Error updating invoice:", err);
-		return { success: false, error: error.message || "Failed to update invoice" };
+	} catch (err) {
+		logger.error("updateInvoice", err);
+		return { success: false, error: "Failed to update invoice" };
 	}
 }
-
