@@ -12,7 +12,7 @@ export async function exportInvoiceToPng(
 	const canvas = await html2canvas(element, {
 		scale: 1,
 		useCORS: true,
-		logging: true,
+		logging: false,
 		scrollX: 0,
 		scrollY: 0,
 		windowWidth: width,
