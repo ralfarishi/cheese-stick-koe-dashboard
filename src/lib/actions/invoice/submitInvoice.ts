@@ -3,18 +3,9 @@
 import { db } from "@/db";
 import { invoice } from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
-import type { InvoiceInput } from "@/lib/types";
-
-interface User {
-	id: string;
-}
-
-interface SubmitInvoiceInput extends InvoiceInput {
-	shippingPrice: string | number;
-	discountAmount?: string | number;
-	totalPrice: string | number;
-	user: User | null;
-}
+import { verifySession } from "@/lib/verifySession";
+import { submitInvoiceSchema } from "@/lib/validations";
+import { logger } from "@/lib/logger";
 
 interface SubmitInvoiceResult {
 	success?: boolean;
@@ -24,49 +15,39 @@ interface SubmitInvoiceResult {
 }
 
 /**
- * Submit a new invoice with items using RPC transaction
+ * Submit a new invoice with items using RPC transaction.
+ *
  */
-export const submitInvoice = async ({
-	invoiceNumber,
-	buyerName,
-	invoiceDate,
-	shippingPrice,
-	discountAmount = 0,
-	totalPrice,
-	items,
-	user,
-}: SubmitInvoiceInput): Promise<SubmitInvoiceResult> => {
-	// Auth validation
+export const submitInvoice = async (input: unknown): Promise<SubmitInvoiceResult> => {
+	// Server-side auth
+	const user = await verifySession();
 	if (!user) {
-		return { error: "User is not login!" };
+		return { error: "Unauthorized" };
 	}
 
-	// Input validation
-	if (!invoiceNumber?.trim() || !buyerName?.trim() || !Array.isArray(items) || items.length === 0) {
-		return {
-			error: "Invoice number, buyer name, and at least one item are required!",
-		};
+	// Zod validation
+	const parsed = submitInvoiceSchema.safeParse(input);
+	if (!parsed.success) {
+		const firstError = parsed.error.issues[0]?.message ?? "Invalid input";
+		return { error: firstError };
 	}
 
-	// Sanitize inputs
-	const safeInvoiceNumber = invoiceNumber.trim();
-	const safeBuyerName = buyerName.trim();
-
-	// Validate number inputs
-	const shipping = Number.isNaN(parseInt(String(shippingPrice)))
-		? 0
-		: parseInt(String(shippingPrice));
-	const discount = Number.isNaN(parseInt(String(discountAmount)))
-		? 0
-		: parseInt(String(discountAmount));
-	const total = Number.isNaN(parseInt(String(totalPrice))) ? 0 : parseInt(String(totalPrice));
+	const {
+		invoiceNumber,
+		buyerName,
+		invoiceDate,
+		shippingPrice,
+		discountAmount,
+		totalPrice,
+		items,
+	} = parsed.data;
 
 	try {
 		// Check if invoice number already exists
 		const [existing] = await db
 			.select({ id: invoice.id })
 			.from(invoice)
-			.where(eq(invoice.invoiceNumber, safeInvoiceNumber))
+			.where(eq(invoice.invoiceNumber, invoiceNumber))
 			.limit(1);
 
 		if (existing) {
@@ -75,12 +56,12 @@ export const submitInvoice = async ({
 
 		// Prepare data for RPC
 		const invoiceData = {
-			invoiceNumber: safeInvoiceNumber,
-			buyerName: safeBuyerName,
-			invoiceDate: new Date(invoiceDate).toISOString(),
-			shipping,
-			discount,
-			totalPrice: total,
+			invoiceNumber,
+			buyerName,
+			invoiceDate: invoiceDate.toISOString(),
+			shipping: shippingPrice,
+			discount: discountAmount,
+			totalPrice,
 			status: "pending",
 			userId: user.id,
 		};
@@ -90,14 +71,14 @@ export const submitInvoice = async ({
 			sizePriceId: item.sizePriceId,
 			quantity: item.quantity,
 			subtotal: item.subtotal,
-			discountAmount: item.discountAmount || 0,
+			discountAmount: item.discountAmount,
 		}));
 
 		// Call RPC function via raw SQL (preserves transaction logic)
 		const result = await db.execute(
 			sql`SELECT create_invoice(${JSON.stringify(invoiceData)}::jsonb, ${JSON.stringify(
-				itemsData
-			)}::jsonb) as invoice`
+				itemsData,
+			)}::jsonb) as invoice`,
 		);
 
 		const row = result[0] as { invoice?: unknown } | undefined;
@@ -106,7 +87,7 @@ export const submitInvoice = async ({
 
 		return { success: true, message: "Invoice has been created", invoice: invoiceResult };
 	} catch (err) {
-		console.error("Error creating invoice:", err);
+		logger.error("submitInvoice", err);
 		return { error: "Something went wrong while saving invoice!" };
 	}
 };

@@ -29,7 +29,6 @@ export default async function Page() {
 			products={products || []}
 			sizes={sizes || []}
 			lastInvoiceNumber={lastInvoice?.invoiceNumber || null}
-			user={user}
 		/>
 	);
 }

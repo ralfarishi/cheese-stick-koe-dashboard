@@ -2,7 +2,7 @@
 
 import { useReducer, useCallback } from "react";
 import { useForm } from "react-hook-form";
-import type { User } from "@supabase/supabase-js";
+
 
 import { Button } from "@/components/ui/button";
 import { Receipt } from "lucide-react";
@@ -25,7 +25,6 @@ interface CreateInvoicePageProps {
 	products: ProductOption[];
 	sizes: SizeOption[];
 	lastInvoiceNumber: string | null;
-	user: User;
 }
 
 type InvoiceState = {
@@ -72,7 +71,6 @@ export default function CreateInvoicePage({
 	products,
 	sizes,
 	lastInvoiceNumber,
-	user,
 }: CreateInvoicePageProps) {
 	const [state, dispatch] = useReducer(invoiceReducer, {
 		invoiceDate: new Date().toISOString(),
@@ -130,11 +128,6 @@ export default function CreateInvoicePage({
 	const totalPrice = subtotal + shippingPrice;
 
 	const onSubmit = async (data: CreateInvoiceFormValues): Promise<void> => {
-		if (!user) {
-			toast.error("User not log in");
-			return;
-		}
-
 		const isInvalid = items.some((item) => !item.productId || !item.sizePriceId);
 
 		if (isInvalid) {
@@ -149,7 +142,6 @@ export default function CreateInvoicePage({
 				invoiceNumber: data.invoiceNumber,
 				buyerName: data.buyerName.trim().toLowerCase(),
 				invoiceDate,
-				shipping: shippingPrice,
 				shippingPrice,
 				discountAmount,
 				totalPrice,
@@ -160,7 +152,6 @@ export default function CreateInvoicePage({
 					subtotal: item.quantity * item.price,
 					discountAmount: item.discountAmount,
 				})),
-				user,
 			});
 
 			if (res.error) {
