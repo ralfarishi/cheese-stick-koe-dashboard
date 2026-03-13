@@ -100,14 +100,39 @@ export function useInvoiceForm({
 	const [invoiceDate, setInvoiceDate] = useState<string>(invoiceDateStr.split("T")[0] || "");
 	const [invoiceTime] = useState<string>(invoiceDateStr.split("T")[1] || "00:00:00.000Z");
 
-	const [items, setItems] = useState<InvoiceFormItem[]>([]);
+	const [items, setItems] = useState<InvoiceFormItem[]>(() => {
+		if (!invoice?.items?.length) return [];
+		return invoice.items.map((item, idx) => {
+			const quantity = item.quantity || 0;
+			const price = item.sizePrice?.price || 0;
+			const subtotal = quantity * price;
+			const discountAmount = item.discountAmount || 0;
+			return {
+				id: `item-${idx}-${Date.now()}`,
+				productId: item.productId,
+				sizePriceId: item.sizePriceId,
+				quantity,
+				price,
+				discountAmount,
+				costPerItem: item.costPerItem || 0,
+				totalCost: item.totalCost || 0,
+				discountInput: String(discountAmount),
+				discountMode: "amount" as DiscountMode,
+				total: subtotal - discountAmount,
+			};
+		});
+	});
 	const [shippingPrice, setShippingPrice] = useState<number>(invoice.shipping || 0);
 	const [status, setStatus] = useState<InvoiceStatus>(
 		(invoice.status as InvoiceStatus) || "pending",
 	);
 
-	const [discountMode, setDiscountMode] = useState<DiscountMode>("amount");
-	const [discountInput, setDiscountInput] = useState<string>("0");
+	const [discountMode, setDiscountMode] = useState<DiscountMode>(
+		invoice?.discount !== undefined ? "amount" : "amount",
+	);
+	const [discountInput, setDiscountInput] = useState<string>(
+		invoice?.discount !== undefined ? String(invoice.discount) : "0",
+	);
 
 	const form = useForm<InvoiceFormValues>({
 		defaultValues: {
@@ -117,39 +142,6 @@ export function useInvoiceForm({
 		},
 		mode: "onChange",
 	});
-
-	// Initialize items from invoice
-	useEffect(() => {
-		if (invoice?.items?.length) {
-			const mappedItems: InvoiceFormItem[] = invoice.items.map((item, idx) => {
-				const quantity = item.quantity || 0;
-				const price = item.sizePrice?.price || 0;
-				const subtotal = quantity * price;
-				const discountAmount = item.discountAmount || 0;
-
-				return {
-					id: `item-${idx}-${Date.now()}`,
-					productId: item.productId,
-					sizePriceId: item.sizePriceId,
-					quantity,
-					price,
-					discountAmount,
-					costPerItem: item.costPerItem || 0,
-					totalCost: item.totalCost || 0,
-					discountInput: String(discountAmount),
-					discountMode: "amount" as DiscountMode,
-					total: subtotal - discountAmount,
-				};
-			});
-
-			setItems(mappedItems);
-		}
-
-		if (invoice?.discount !== undefined) {
-			setDiscountInput(String(invoice.discount));
-			setDiscountMode("amount");
-		}
-	}, [invoice]);
 
 	// Calculate totals
 	const itemsTotal = items.reduce((sum, item) => sum + item.total, 0);
@@ -290,13 +282,15 @@ export function useInvoiceForm({
 			}
 
 			setUpdateStatus("success");
-
-			setTimeout(() => {
-				router.push("/dashboard/invoices");
-				router.refresh();
-			}, 1300);
 		});
 	};
+
+	// Navigate after success — useEffect so the overlay renders before redirect
+	useEffect(() => {
+		if (updateStatus !== "success") return;
+		router.push("/dashboard/invoices");
+		router.refresh();
+	}, [updateStatus, router]);
 
 	return {
 		form,

@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Invoice, InvoiceItem } from "@/lib/types";
 
+/* Extended invoice item with joined product/size data from getInvoiceWithItems */
+interface InvoiceItemWithJoins extends InvoiceItem {
+	product?: { name?: string };
+	productName?: string;
+	size?: { size?: string };
+	sizeName?: string;
+}
+
 export interface PreviewItem {
 	id: string;
 	productName: string;
@@ -12,7 +20,7 @@ export interface PreviewItem {
 }
 
 export interface UseInvoicePreviewDataProps {
-	invoiceItems: InvoiceItem[];
+	invoiceItems: InvoiceItemWithJoins[];
 	invoice: Invoice;
 	onDataReady?: (ready: boolean) => void;
 	onReady?: () => void;
@@ -41,7 +49,7 @@ export function useInvoicePreviewData({
 	// Map invoice items directly since we already have the joined data from getInvoiceWithItems
 	useEffect(() => {
 		if (invoiceItems?.length) {
-			const mappedItems: PreviewItem[] = invoiceItems.map((item: any) => {
+			const mappedItems: PreviewItem[] = invoiceItems.map((item) => {
 				const discount = item.discountAmount || 0;
 				const quantity = item.quantity || 1;
 				const total = item.subtotal || 0;

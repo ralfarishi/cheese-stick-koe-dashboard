@@ -43,12 +43,13 @@ interface UpdateInvoiceFormProps {
 	sizesData?: SizeBase[];
 }
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_PRODUCTS: ProductBase[] = [];
+const EMPTY_SIZES: SizeBase[] = [];
 
 export default function UpdateInvoiceForm({
 	invoice,
-	productsData = EMPTY_ARRAY,
-	sizesData = EMPTY_ARRAY,
+	productsData = EMPTY_PRODUCTS,
+	sizesData = EMPTY_SIZES,
 }: UpdateInvoiceFormProps) {
 	const {
 		form,
