@@ -18,6 +18,7 @@ import {
 	Zap,
 } from "lucide-react";
 import CustomerChart from "@/components/dashboard/CustomerChart";
+import IncomeChart from "@/components/dashboard/IncomeChart";
 
 export const metadata = {
 	title: getPageTitle("Dashboard"),
@@ -26,6 +27,7 @@ export const metadata = {
 import { getCustomerStats } from "@/lib/actions/invoice/getCustomerStats";
 import { getTopProducts } from "@/lib/actions/dashboard/getTopProducts";
 import { getTopBuyers } from "@/lib/actions/dashboard/getTopBuyers";
+import { getIncomeStats } from "@/lib/actions/dashboard/getIncomeStats";
 import TopPerformers from "./_components/TopPerformers";
 
 export default async function Dashboard() {
@@ -47,6 +49,7 @@ export default async function Dashboard() {
 		{ data: statsData, error: statsError },
 		{ count: totalProducts },
 		customerStats,
+		incomeStats,
 		topProducts,
 		topBuyers,
 	] = await Promise.all([
@@ -62,6 +65,7 @@ export default async function Dashboard() {
 		supabase.from("Product").select("*", { count: "exact", head: true }).eq("userId", user.id),
 
 		getCustomerStats(currentYear),
+		getIncomeStats(currentYear),
 		getTopProducts(5),
 		getTopBuyers(5),
 	]);
@@ -253,6 +257,8 @@ export default async function Dashboard() {
 				</div>
 
 				<CustomerChart initialData={customerStats} />
+
+				<IncomeChart initialData={incomeStats} />
 
 				<TopPerformers topProducts={topProducts} topBuyers={topBuyers} />
 

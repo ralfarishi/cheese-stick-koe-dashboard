@@ -40,7 +40,7 @@ export default function InvoicePreviewTable({
 	shippingType,
 	gapRows,
 }: InvoicePreviewTableProps) {
-	const hasDiscount = (invoice.discount ?? 0) > 0;
+	const hasDiscount = items.some((item) => (item.discountAmount ?? 0) > 0);
 
 	return (
 		<div className="md:col-span-2 space-y-6">
